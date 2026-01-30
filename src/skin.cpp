@@ -332,7 +332,6 @@ void SkinInfillAreaComputation::generateSkinRoofingFlooringFill(SliceLayerPart& 
     const size_t flooring_layer_count = std::min(mesh_.settings.get<size_t>("flooring_layer_count"), mesh_.settings.get<size_t>("bottom_layers"));
     const coord_t skin_overlap = mesh_.settings.get<coord_t>("skin_overlap_mm");
     const coord_t roofing_expansion = mesh_.settings.get<coord_t>("roofing_expansion");
-    const coord_t roofing_line_width = mesh_.settings.get<coord_t>("roofing_line_width");
 
     constexpr coord_t epsilon = 5;
     const SliceDataStorage slice_data;
@@ -353,9 +352,8 @@ void SkinInfillAreaComputation::generateSkinRoofingFlooringFill(SliceLayerPart& 
             roofing_area_without_expansion = roofing_area_without_expansion.unionPolygons(skin_part.outline.difference(filled_area_above));
         }
 
-        // Check if the existing roofing area (without expansion) has a width of at least 2x nozzle size
-        // We do this by offsetting inward by the roofing_line_width and checking if anything remains
-        should_apply_roofing_expansion = ! roofing_area_without_expansion.offset(-roofing_line_width).empty();
+        // Check if there is any existing roofing area (without expansion)
+        should_apply_roofing_expansion = ! roofing_area_without_expansion.empty();
     }
 
     // In order to avoid edge cases, it is safer to create the extended roofing area by reducing the area above. However, we want to avoid reducing the borders, so at this
