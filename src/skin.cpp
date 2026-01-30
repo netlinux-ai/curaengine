@@ -349,7 +349,7 @@ void SkinInfillAreaComputation::generateSkinRoofingFlooringFill(SliceLayerPart& 
         Shape roofing_area_without_expansion;
         for (const SkinPart& skin_part : part.skin_parts)
         {
-            roofing_area_without_expansion = roofing_area_without_expansion.unionPolygons(skin_part.outline.difference(filled_area_above));
+            roofing_area_without_expansion = roofing_area_without_expansion.unionPolygons(skin_part.outline.difference(filled_area_above.offset(epsilon)));
         }
 
         // Check if there is any existing roofing area (without expansion)
