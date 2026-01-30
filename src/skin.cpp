@@ -342,16 +342,21 @@ void SkinInfillAreaComputation::generateSkinRoofingFlooringFill(SliceLayerPart& 
     const Shape filled_area_below = generateFilledAreaBelow(part, flooring_layer_count).value_or(build_plate.offset(epsilon));
 
     // Check if roofing_expansion should be applied
-    // First, calculate what the roofing area would be without expansion
-    Shape roofing_area_without_expansion = Shape();
-    for (const SkinPart& skin_part : part.skin_parts)
+    // Only perform expensive calculations if roofing_expansion is enabled
+    bool should_apply_roofing_expansion = false;
+    if (roofing_expansion > 0)
     {
-        roofing_area_without_expansion = roofing_area_without_expansion.unionPolygons(skin_part.outline.difference(filled_area_above));
-    }
+        // Calculate what the roofing area would be without expansion
+        Shape roofing_area_without_expansion;
+        for (const SkinPart& skin_part : part.skin_parts)
+        {
+            roofing_area_without_expansion = roofing_area_without_expansion.unionPolygons(skin_part.outline.difference(filled_area_above));
+        }
 
-    // Check if the existing roofing area (without expansion) has a width of at least 2x nozzle size
-    // We do this by offsetting inward by the roofing_line_width and checking if anything remains
-    const bool should_apply_roofing_expansion = roofing_expansion > 0 && ! roofing_area_without_expansion.offset(-roofing_line_width).empty();
+        // Check if the existing roofing area (without expansion) has a width of at least 2x nozzle size
+        // We do this by offsetting inward by the roofing_line_width and checking if anything remains
+        should_apply_roofing_expansion = ! roofing_area_without_expansion.offset(-roofing_line_width).empty();
+    }
 
     // In order to avoid edge cases, it is safer to create the extended roofing area by reducing the area above. However, we want to avoid reducing the borders, so at this
     // point we extend the area above with the build plate area, so that when reducing, the border will still be far away.
