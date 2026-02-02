@@ -5,6 +5,7 @@
 
 #include <range/v3/algorithm/max.hpp>
 #include <range/v3/algorithm/min.hpp>
+#include <spdlog/spdlog.h>
 
 #include "utils/AABB3D.h"
 #include "utils/OBJ.h"
@@ -148,6 +149,77 @@ double VoxelGrid::toGlobalZ(const uint16_t z, const bool at_center) const
     return (z * resolution_.z_) + origin_.z_ + (at_center ? resolution_.z_ / 2.0 : 0.0);
 }
 
+void ProjectTriangle(const Triangle3D& tri, const Point3D& axis, float& minProj, float& maxProj)
+{
+    minProj = maxProj = tri[0].dot(axis);
+    float proj = tri[1].dot(axis);
+    minProj = std::min(minProj, proj);
+    maxProj = std::max(maxProj, proj);
+    proj = tri[2].dot(axis);
+    minProj = std::min(minProj, proj);
+    maxProj = std::max(maxProj, proj);
+}
+
+void ProjectAABB(const Point3D& aabb_min, const Point3D& aabb_max, const Point3D& axis, float& minProj, float& maxProj)
+{
+    const std::array vertices
+        = { Point3D{ aabb_min.x_, aabb_min.y_, aabb_min.z_ }, Point3D{ aabb_min.x_, aabb_min.y_, aabb_max.z_ }, Point3D{ aabb_min.x_, aabb_max.y_, aabb_min.z_ },
+            Point3D{ aabb_min.x_, aabb_max.y_, aabb_max.z_ }, Point3D{ aabb_max.x_, aabb_min.y_, aabb_min.z_ }, Point3D{ aabb_max.x_, aabb_min.y_, aabb_max.z_ },
+            Point3D{ aabb_max.x_, aabb_max.y_, aabb_min.z_ }, Point3D{ aabb_max.x_, aabb_max.y_, aabb_max.z_ } };
+
+    minProj = maxProj = vertices[0].dot(axis);
+    for (const Point3D& vertex : vertices)
+    {
+        float proj = vertex.dot(axis);
+        minProj = std::min(minProj, proj);
+        maxProj = std::max(maxProj, proj);
+    }
+}
+
+bool OverlapOnAxis(const Triangle3D& tri, const Point3D& aabb_min, const Point3D& aabb_max, const Point3D& axis)
+{
+    float triMin, triMax, boxMin, boxMax;
+    ProjectTriangle(tri, axis, triMin, triMax);
+    ProjectAABB(aabb_min, aabb_max, axis, boxMin, boxMax);
+
+    return ! (triMax < boxMin || triMin > boxMax);
+}
+
+bool VoxelGrid::triangleIntersectsAABB(const Triangle3D& tri, const Point3D& aabb_min, const Point3D& aabb_max)
+{
+    // Normals of the AABB (x, y, z axes)
+    Point3D axes[13];
+    axes[0] = { 1, 0, 0 };
+    axes[1] = { 0, 1, 0 };
+    axes[2] = { 0, 0, 1 };
+
+    // Normal of the triangle
+    const Point3D edge1 = tri[1] - tri[0];
+    const Point3D edge2 = tri[2] - tri[0];
+    axes[3] = edge1.cross(edge2).normalized();
+
+    // Cross products of the triangle's edges and the AABB's edges
+    Point3D aabbEdges[3] = { { aabb_max.x_ - aabb_min.x_, 0, 0 }, { 0, aabb_max.y_ - aabb_min.y_, 0 }, { 0, 0, aabb_max.z_ - aabb_min.z_ } };
+
+    int axisIndex = 4;
+    for (int i = 0; i < 3; ++i)
+    {
+        axes[axisIndex++] = edge1.cross(aabbEdges[i]).normalized();
+        axes[axisIndex++] = edge2.cross(aabbEdges[i]).normalized();
+    }
+
+    // Check for overlap on all axes
+    for (int i = 0; i < 13; ++i)
+    {
+        if (! OverlapOnAxis(tri, aabb_min, aabb_max, axes[i]))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 std::vector<VoxelGrid::LocalCoordinates> VoxelGrid::getTraversedVoxels(const Triangle3D& triangle) const
 {
     const Point3U16 p0 = toLocalCoordinates(triangle[0]).position;
@@ -162,6 +234,8 @@ std::vector<VoxelGrid::LocalCoordinates> VoxelGrid::getTraversedVoxels(const Tri
 
     const uint16_t xmin = std::min({ p0.x, p1.x, p2.x });
     const uint16_t xmax = std::max({ p0.x, p1.x, p2.x });
+    int iterations = 0;
+
     for (uint16_t x = xmin; x <= xmax; ++x)
     {
         const double layer_start_x = toGlobalX(x, false);
@@ -216,7 +290,17 @@ std::vector<VoxelGrid::LocalCoordinates> VoxelGrid::getTraversedVoxels(const Tri
 
             for (uint16_t z = zmin; z <= zmax; ++z)
             {
-                traversed_voxels.push_back(LocalCoordinates(x, y, z));
+                const double layer_start_z = toGlobalZ(z, false);
+                const double layer_end_z = toGlobalZ(z + 1, false);
+
+                const Point3D aabb_min(layer_start_x, layer_start_y, layer_start_z);
+                const Point3D aabb_max(layer_end_x, layer_end_y, layer_end_z);
+
+                iterations++;
+                if (triangleIntersectsAABB(triangle, aabb_min, aabb_max))
+                {
+                    traversed_voxels.push_back(LocalCoordinates(x, y, z));
+                }
             }
         }
     }

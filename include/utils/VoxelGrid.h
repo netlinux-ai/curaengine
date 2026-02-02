@@ -156,6 +156,9 @@ public:
     void saveToObj(const std::string& filename, const double scale = 1.0) const;
 
 private:
+    static bool triangleIntersectsAABB(const Triangle3D& triangle, const Point3D& aabb_min, const Point3D& aabb_max);
+
+private:
     Point3D resolution_;
     Point3D origin_;
     Point3LL slices_count_;
