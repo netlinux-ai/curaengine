@@ -5,6 +5,7 @@
 
 #include <range/v3/algorithm/max.hpp>
 #include <range/v3/algorithm/min.hpp>
+#include <range/v3/view/transform.hpp>
 #include <spdlog/spdlog.h>
 
 #include "utils/AABB3D.h"
@@ -220,84 +221,198 @@ bool VoxelGrid::triangleIntersectsAABB(const Triangle3D& tri, const Point3D& aab
     return true;
 }
 
+class ParameterizedPolygon
+{
+public:
+    ParameterizedPolygon(std::vector<ParameterizedSegment>&& segments)
+        : segments_(std::move(segments))
+    {
+    }
+
+    ParameterizedPolygon(const std::initializer_list<ParameterizedSegment>& segments)
+        : segments_(segments)
+    {
+    }
+
+    std::optional<ParameterizedPolygon> cropToLayer(
+        const double layer_start,
+        const double layer_end,
+        const std::function<std::optional<ParameterizedSegment>(const ParameterizedSegment&, const double, const double)>& function_intersect_with_layer) const
+    {
+        std::vector<ParameterizedSegment> new_segments;
+
+        const auto join_segments = [&new_segments](const ParameterizedSegment& next_segment)
+        {
+            const double join_distance = (new_segments.back().end() - next_segment.start()).vSize2();
+            if (join_distance > EPSILON * EPSILON)
+            {
+                // Segments are not joined, add a transition segment
+                new_segments.push_back(ParameterizedSegment(new_segments.back().end(), next_segment.start()));
+            }
+            else
+            {
+                // Segments are almost joined, so slightly change the end of the previous segment to match
+                new_segments.back().setEnd(next_segment.start());
+            }
+        };
+
+        for (const ParameterizedSegment& segment : segments_)
+        {
+            const std::optional<ParameterizedSegment> cropped_segment = function_intersect_with_layer(segment, layer_start, layer_end);
+            if (cropped_segment.has_value())
+            {
+                if (! new_segments.empty())
+                {
+                    join_segments(*cropped_segment);
+                }
+                new_segments.push_back(*cropped_segment);
+            }
+        }
+
+        if (new_segments.size() < 2)
+        {
+            return std::nullopt;
+        }
+
+        // Explicitly close the polygon if not closed yet
+        join_segments(new_segments.front());
+
+        return ParameterizedPolygon(std::move(new_segments));
+    }
+
+    std::optional<ParameterizedPolygon> cropToXLayer(const double layer_start_x, const double layer_end_x) const
+    {
+        return cropToLayer(layer_start_x, layer_end_x, &ParameterizedSegment::intersectionWithXLayer);
+    }
+
+    std::optional<ParameterizedPolygon> cropToYLayer(const double layer_start_y, const double layer_end_y) const
+    {
+        return cropToLayer(layer_start_y, layer_end_y, &ParameterizedSegment::intersectionWithYLayer);
+    }
+
+    std::optional<ParameterizedPolygon> cropToZLayer(const double layer_start_z, const double layer_end_z) const
+    {
+        return cropToLayer(layer_start_z, layer_end_z, &ParameterizedSegment::intersectionWithZLayer);
+    }
+
+    double minX() const
+    {
+        return std::ranges::min(
+            segments_
+            | ranges::views::transform(
+                [](const ParameterizedSegment& segment)
+                {
+                    return segment.start().x_;
+                }));
+    }
+
+    double maxX() const
+    {
+        return std::ranges::max(
+            segments_
+            | ranges::views::transform(
+                [](const ParameterizedSegment& segment)
+                {
+                    return segment.start().x_;
+                }));
+    }
+
+    double minY() const
+    {
+        return std::ranges::min(
+            segments_
+            | ranges::views::transform(
+                [](const ParameterizedSegment& segment)
+                {
+                    return segment.start().y_;
+                }));
+    }
+
+    double maxY() const
+    {
+        return std::ranges::max(
+            segments_
+            | ranges::views::transform(
+                [](const ParameterizedSegment& segment)
+                {
+                    return segment.start().y_;
+                }));
+    }
+
+    double minZ() const
+    {
+        return std::ranges::min(
+            segments_
+            | ranges::views::transform(
+                [](const ParameterizedSegment& segment)
+                {
+                    return segment.start().z_;
+                }));
+    }
+
+    double maxZ() const
+    {
+        return std::ranges::max(
+            segments_
+            | ranges::views::transform(
+                [](const ParameterizedSegment& segment)
+                {
+                    return segment.start().z_;
+                }));
+    }
+
+private:
+    std::vector<ParameterizedSegment> segments_;
+};
+
 std::vector<VoxelGrid::LocalCoordinates> VoxelGrid::getTraversedVoxels(const Triangle3D& triangle) const
 {
-    const Point3U16 p0 = toLocalCoordinates(triangle[0]).position;
-    const Point3U16 p1 = toLocalCoordinates(triangle[1]).position;
-    const Point3U16 p2 = toLocalCoordinates(triangle[2]).position;
+    std::vector<LocalCoordinates> traversed_voxels;
 
     const ParameterizedSegment s1(triangle[0], triangle[1]);
     const ParameterizedSegment s2(triangle[1], triangle[2]);
     const ParameterizedSegment s3(triangle[2], triangle[0]);
 
-    std::vector<LocalCoordinates> traversed_voxels;
+    const ParameterizedPolygon polygon({ s1, s2, s3 });
 
-    const uint16_t xmin = std::min({ p0.x, p1.x, p2.x });
-    const uint16_t xmax = std::max({ p0.x, p1.x, p2.x });
-    int iterations = 0;
+    const uint16_t xmin = toLocalX(polygon.minX());
+    const uint16_t xmax = toLocalX(polygon.maxX());
 
     for (uint16_t x = xmin; x <= xmax; ++x)
     {
         const double layer_start_x = toGlobalX(x, false);
         const double layer_end_x = toGlobalX(x + 1, false);
-        const std::optional<ParameterizedSegment> s1_inter_x = s1.intersectionWithXLayer(layer_start_x, layer_end_x);
-        const std::optional<ParameterizedSegment> s2_inter_x = s2.intersectionWithXLayer(layer_start_x, layer_end_x);
-        const std::optional<ParameterizedSegment> s3_inter_x = s3.intersectionWithXLayer(layer_start_x, layer_end_x);
 
-        std::vector<double> y_values;
-        for (const std::optional<ParameterizedSegment>& inter_x : { s1_inter_x, s2_inter_x, s3_inter_x })
-        {
-            if (inter_x.has_value())
-            {
-                y_values.push_back(inter_x.value().start().y_);
-                y_values.push_back(inter_x.value().end().y_);
-            }
-        }
-
-        if (y_values.empty())
+        const std::optional<ParameterizedPolygon> polygon_cropped_x = polygon.cropToXLayer(layer_start_x, layer_end_x);
+        if (! polygon_cropped_x.has_value())
         {
             continue;
         }
 
-        const uint16_t ymin = toLocalY(ranges::min(y_values));
-        const uint16_t ymax = toLocalY(ranges::max(y_values));
+        const uint16_t ymin = toLocalY(polygon_cropped_x->minY());
+        const uint16_t ymax = toLocalY(polygon_cropped_x->maxY());
 
         for (uint16_t y = ymin; y <= ymax; ++y)
         {
             const double layer_start_y = toGlobalY(y, false);
             const double layer_end_y = toGlobalY(y + 1, false);
-            const std::optional<ParameterizedSegment> s1_inter_y = s1.intersectionWithYLayer(layer_start_y, layer_end_y);
-            const std::optional<ParameterizedSegment> s2_inter_y = s2.intersectionWithYLayer(layer_start_y, layer_end_y);
-            const std::optional<ParameterizedSegment> s3_inter_y = s3.intersectionWithYLayer(layer_start_y, layer_end_y);
 
-            std::vector<double> z_values;
-            for (const std::optional<ParameterizedSegment>& inter_y : { s1_inter_y, s2_inter_y, s3_inter_y })
-            {
-                if (inter_y.has_value())
-                {
-                    z_values.push_back(inter_y.value().start().z_);
-                    z_values.push_back(inter_y.value().end().z_);
-                }
-            }
-
-            if (z_values.empty())
+            const std::optional<ParameterizedPolygon> polygon_cropped_xy = polygon_cropped_x->cropToYLayer(layer_start_y, layer_end_y);
+            if (! polygon_cropped_xy.has_value())
             {
                 continue;
             }
 
-            const uint16_t zmin = toLocalZ(ranges::min(z_values));
-            const uint16_t zmax = toLocalZ(ranges::max(z_values));
+            const uint16_t zmin = toLocalZ(polygon_cropped_xy->minZ());
+            const uint16_t zmax = toLocalZ(polygon_cropped_xy->maxZ());
 
             for (uint16_t z = zmin; z <= zmax; ++z)
             {
                 const double layer_start_z = toGlobalZ(z, false);
                 const double layer_end_z = toGlobalZ(z + 1, false);
 
-                const Point3D aabb_min(layer_start_x, layer_start_y, layer_start_z);
-                const Point3D aabb_max(layer_end_x, layer_end_y, layer_end_z);
-
-                iterations++;
-                if (triangleIntersectsAABB(triangle, aabb_min, aabb_max))
+                const std::optional<ParameterizedPolygon> polygon_cropped_xyz = polygon_cropped_xy->cropToZLayer(layer_start_z, layer_end_z);
+                if (polygon_cropped_xyz.has_value())
                 {
                     traversed_voxels.push_back(LocalCoordinates(x, y, z));
                 }

@@ -30,18 +30,49 @@ public:
         return end_;
     }
 
+    void setEnd(const Point3D& end);
+
     std::optional<ParameterizedSegment> intersectionWithXLayer(const double layer_start, const double layer_end) const;
 
     std::optional<ParameterizedSegment> intersectionWithYLayer(const double layer_start, const double layer_end) const;
 
+    std::optional<ParameterizedSegment> intersectionWithZLayer(const double layer_start, const double layer_end) const;
+
 private:
+    enum class LayerInsideness
+    {
+        Below,
+        Inside,
+        Above
+    };
+
     Point3D pointAtX(const double x) const;
 
     Point3D pointAtY(const double y) const;
 
-    std::optional<ParameterizedSegment> croppedSegmentX(const double layer_start, const double layer_end, const Point3D& p1, const Point3D& p2) const;
+    Point3D pointAtZ(const double y) const;
 
-    std::optional<ParameterizedSegment> croppedSegmentY(const double layer_start, const double layer_end, const Point3D& p1, const Point3D& p2) const;
+    std::optional<ParameterizedSegment> intersectionWithLayer(
+        const double start_coordinate,
+        const double end_coordinate,
+        const double layer_start,
+        const double layer_end,
+        const std::function<Point3D(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end)>& function_crop_point) const;
+
+    static Point3D croppedPoint(
+        const Point3D& point,
+        const LayerInsideness insideness,
+        const double layer_start,
+        const double layer_end,
+        const std::function<Point3D(const double)>& function_point_at);
+
+    Point3D croppedPointX(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const;
+
+    Point3D croppedPointY(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const;
+
+    Point3D croppedPointZ(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const;
+
+    static LayerInsideness pointIsInside(const double point, const double layer_start, const double layer_end);
 
 private:
     Point3D direction_;
