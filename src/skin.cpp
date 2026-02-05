@@ -340,33 +340,13 @@ void SkinInfillAreaComputation::generateSkinRoofingFlooringFill(SliceLayerPart& 
     const Shape filled_area_above = generateFilledAreaAbove(part, roofing_layer_count);
     const Shape filled_area_below = generateFilledAreaBelow(part, flooring_layer_count).value_or(build_plate.offset(epsilon));
 
-    // Check if roofing_expansion should be applied
-    // Only perform expensive calculations if roofing_expansion is enabled
-    bool should_apply_roofing_expansion = false;
-    if (roofing_expansion > 0)
-    {
-        // Calculate what the roofing area would be without expansion
-        Shape roofing_area_without_expansion;
-        for (const SkinPart& skin_part : part.skin_parts)
-        {
-            roofing_area_without_expansion = roofing_area_without_expansion.unionPolygons(skin_part.outline.difference(filled_area_above.offset(epsilon)));
-        }
-
-        // Check if there is any existing roofing area (without expansion)
-        should_apply_roofing_expansion = ! roofing_area_without_expansion.empty();
-    }
-
-    // In order to avoid edge cases, it is safer to create the extended roofing area by reducing the area above. However, we want to avoid reducing the borders, so at this
-    // point we extend the area above with the build plate area, so that when reducing, the border will still be far away.
-    const Shape reduced_area_above
-        = should_apply_roofing_expansion
-            ? build_plate.offset(roofing_expansion * 2).difference(part.outline).unionPolygons(filled_area_above.offset(epsilon)).offset(-roofing_expansion - 2 * epsilon)
-            : filled_area_above;
-
     for (SkinPart& skin_part : part.skin_parts)
     {
-        skin_part.roofing_fill = skin_part.outline.difference(reduced_area_above);
-        skin_part.flooring_fill = skin_part.outline.intersection(filled_area_above).difference(filled_area_below);
+        const Shape below_inside = skin_part.outline.intersection(filled_area_below);
+        const Shape above_inside = skin_part.outline.intersection(filled_area_above);
+
+        skin_part.roofing_fill = below_inside.difference(filled_area_above).offset(roofing_expansion).intersection(below_inside);
+        skin_part.flooring_fill = above_inside.difference(filled_area_below);
         skin_part.skin_fill = skin_part.outline.difference(skin_part.roofing_fill).intersection(filled_area_below);
 
         // We remove offsets areas from roofing and flooring anywhere they overlap with skin_fill.
