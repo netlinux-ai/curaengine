@@ -1,38 +1,38 @@
 // Copyright (c) 2025 UltiMaker
 // CuraEngine is released under the terms of the AGPLv3 or higher
 
-#include "utils/ParameterizedSegment.h"
+#include "utils/CroppableSegment3D.h"
 
 
 namespace cura
 {
 
-ParameterizedSegment::ParameterizedSegment(const Point3D& start, const Point3D& end)
+CroppableSegment3D::CroppableSegment3D(const Point3D& start, const Point3D& end)
     : direction_(end - start)
     , start_(start)
     , end_(end)
 {
 }
 
-Point3D ParameterizedSegment::pointAtX(const double x) const
+Point3D CroppableSegment3D::pointAtX(const double x) const
 {
     const double factor = (x - start_.x_) / (direction_.x_);
     return Point3D(x, start_.y_ + factor * direction_.y_, start_.z_ + factor * direction_.z_);
 }
 
-Point3D ParameterizedSegment::pointAtY(const double y) const
+Point3D CroppableSegment3D::pointAtY(const double y) const
 {
     const double factor = (y - start_.y_) / (direction_.y_);
     return Point3D(start_.x_ + factor * direction_.x_, y, start_.z_ + factor * direction_.z_);
 }
 
-Point3D ParameterizedSegment::pointAtZ(const double z) const
+Point3D CroppableSegment3D::pointAtZ(const double z) const
 {
     const double factor = (z - start_.z_) / (direction_.z_);
     return Point3D(start_.x_ + factor * direction_.x_, start_.y_ + factor * direction_.y_, z);
 }
 
-std::optional<ParameterizedSegment> ParameterizedSegment::intersectionWithLayer(
+std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithLayer(
     const double start_coordinate,
     const double end_coordinate,
     const double layer_start,
@@ -62,10 +62,10 @@ std::optional<ParameterizedSegment> ParameterizedSegment::intersectionWithLayer(
         return std::nullopt;
     }
 
-    return ParameterizedSegment(new_segment_start, new_segment_end);
+    return CroppableSegment3D(new_segment_start, new_segment_end);
 }
 
-ParameterizedSegment::LayerInsideness ParameterizedSegment::pointIsInside(const double point, const double layer_start, const double layer_end)
+CroppableSegment3D::LayerInsideness CroppableSegment3D::pointIsInside(const double point, const double layer_start, const double layer_end)
 {
     if (point < layer_start)
     {
@@ -80,7 +80,7 @@ ParameterizedSegment::LayerInsideness ParameterizedSegment::pointIsInside(const 
     return LayerInsideness::Inside;
 }
 
-Point3D ParameterizedSegment::croppedPoint(
+Point3D CroppableSegment3D::croppedPoint(
     const Point3D& point,
     const LayerInsideness insideness,
     const double layer_start,
@@ -100,55 +100,55 @@ Point3D ParameterizedSegment::croppedPoint(
     return Point3D();
 }
 
-Point3D ParameterizedSegment::croppedPointX(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const
+Point3D CroppableSegment3D::croppedPointX(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const
 {
-    return croppedPoint(point, insideness, layer_start, layer_end, std::bind(&ParameterizedSegment::pointAtX, this, std::placeholders::_1));
+    return croppedPoint(point, insideness, layer_start, layer_end, std::bind(&CroppableSegment3D::pointAtX, this, std::placeholders::_1));
 }
 
-Point3D ParameterizedSegment::croppedPointY(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const
+Point3D CroppableSegment3D::croppedPointY(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const
 {
-    return croppedPoint(point, insideness, layer_start, layer_end, std::bind(&ParameterizedSegment::pointAtY, this, std::placeholders::_1));
+    return croppedPoint(point, insideness, layer_start, layer_end, std::bind(&CroppableSegment3D::pointAtY, this, std::placeholders::_1));
 }
 
-Point3D ParameterizedSegment::croppedPointZ(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const
+Point3D CroppableSegment3D::croppedPointZ(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const
 {
-    return croppedPoint(point, insideness, layer_start, layer_end, std::bind(&ParameterizedSegment::pointAtZ, this, std::placeholders::_1));
+    return croppedPoint(point, insideness, layer_start, layer_end, std::bind(&CroppableSegment3D::pointAtZ, this, std::placeholders::_1));
 }
 
-void ParameterizedSegment::setEnd(const Point3D& end)
+void CroppableSegment3D::setEnd(const Point3D& end)
 {
     end_ = end;
     direction_ = end_ - start_;
 }
 
-std::optional<ParameterizedSegment> ParameterizedSegment::intersectionWithXLayer(const double layer_start, const double layer_end) const
+std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithXLayer(const double layer_start, const double layer_end) const
 {
     return intersectionWithLayer(
         start_.x_,
         end_.x_,
         layer_start,
         layer_end,
-        std::bind(&ParameterizedSegment::croppedPointX, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+        std::bind(&CroppableSegment3D::croppedPointX, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 }
 
-std::optional<ParameterizedSegment> ParameterizedSegment::intersectionWithYLayer(const double layer_start, const double layer_end) const
+std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithYLayer(const double layer_start, const double layer_end) const
 {
     return intersectionWithLayer(
         start_.y_,
         end_.y_,
         layer_start,
         layer_end,
-        std::bind(&ParameterizedSegment::croppedPointY, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+        std::bind(&CroppableSegment3D::croppedPointY, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 }
 
-std::optional<ParameterizedSegment> ParameterizedSegment::intersectionWithZLayer(const double layer_start, const double layer_end) const
+std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithZLayer(const double layer_start, const double layer_end) const
 {
     return intersectionWithLayer(
         start_.z_,
         end_.z_,
         layer_start,
         layer_end,
-        std::bind(&ParameterizedSegment::croppedPointZ, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+        std::bind(&CroppableSegment3D::croppedPointZ, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 }
 
 } // namespace cura

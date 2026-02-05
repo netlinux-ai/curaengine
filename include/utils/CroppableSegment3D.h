@@ -1,8 +1,8 @@
 // Copyright (c) 2025 UltiMaker
 // CuraEngine is released under the terms of the AGPLv3 or higher
 
-#ifndef UTILS_PARAMETERIZEDSEGMENT_H
-#define UTILS_PARAMETERIZEDSEGMENT_H
+#ifndef UTILS_CROPPABLESEGMENT3D_H
+#define UTILS_CROPPABLESEGMENT3D_H
 
 #include <optional>
 
@@ -13,12 +13,12 @@ namespace cura
 {
 
 /*!
- * The ParameterizedSegment is a helper to quickly calculate the intersections of a segment with the X and Y planes.
+ * The CroppableSegment is a helper to quickly calculate the intersections of a segment with the X and Y planes.
  */
-class ParameterizedSegment
+class CroppableSegment3D
 {
 public:
-    ParameterizedSegment(const Point3D& start, const Point3D& end);
+    CroppableSegment3D(const Point3D& start, const Point3D& end);
 
     const Point3D& start() const
     {
@@ -32,11 +32,11 @@ public:
 
     void setEnd(const Point3D& end);
 
-    std::optional<ParameterizedSegment> intersectionWithXLayer(const double layer_start, const double layer_end) const;
+    std::optional<CroppableSegment3D> intersectionWithXLayer(const double layer_start, const double layer_end) const;
 
-    std::optional<ParameterizedSegment> intersectionWithYLayer(const double layer_start, const double layer_end) const;
+    std::optional<CroppableSegment3D> intersectionWithYLayer(const double layer_start, const double layer_end) const;
 
-    std::optional<ParameterizedSegment> intersectionWithZLayer(const double layer_start, const double layer_end) const;
+    std::optional<CroppableSegment3D> intersectionWithZLayer(const double layer_start, const double layer_end) const;
 
 private:
     enum class LayerInsideness
@@ -50,9 +50,9 @@ private:
 
     Point3D pointAtY(const double y) const;
 
-    Point3D pointAtZ(const double y) const;
+    Point3D pointAtZ(const double z) const;
 
-    std::optional<ParameterizedSegment> intersectionWithLayer(
+    std::optional<CroppableSegment3D> intersectionWithLayer(
         const double start_coordinate,
         const double end_coordinate,
         const double layer_start,

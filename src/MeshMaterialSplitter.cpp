@@ -81,6 +81,8 @@ bool operator==(const ContourKey& key1, const ContourKey& key2)
  */
 bool makeVoxelGridFromTexture(const Mesh& mesh, const std::shared_ptr<TextureDataProvider>& texture_data_provider, VoxelGrid& voxel_grid, const uint8_t mesh_extruder_nr)
 {
+    spdlog::stopwatch timer;
+
     boost::concurrent_flat_set<uint8_t> found_extruders;
     std::unordered_set<size_t> active_extruders;
     for (const ExtruderTrain& extruder : Application::getInstance().current_slice_->scene.extruders)
@@ -145,6 +147,7 @@ bool makeVoxelGridFromTexture(const Mesh& mesh, const std::shared_ptr<TextureDat
         return is_specific_extruder;
     }
 
+    spdlog::info("Total voxel grid creation time from texture {}ms", timer.elapsed_ms().count());
     return true;
 }
 
