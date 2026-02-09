@@ -9,9 +9,9 @@
 namespace cura
 {
 
-class Point3D;
+class Point3LL;
 
-using Triangle3D = std::array<Point3D, 3>;
+using Triangle3D = std::array<Point3LL, 3>;
 
 } // namespace cura
 

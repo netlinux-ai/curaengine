@@ -6,7 +6,7 @@
 
 #include <optional>
 
-#include "utils/Point3D.h"
+#include "geometry/Point3LL.h"
 
 
 namespace cura
@@ -18,25 +18,25 @@ namespace cura
 class CroppableSegment3D
 {
 public:
-    CroppableSegment3D(const Point3D& start, const Point3D& end);
+    CroppableSegment3D(const Point3LL& start, const Point3LL& end);
 
-    const Point3D& start() const
+    const Point3LL& start() const
     {
         return start_;
     }
 
-    const Point3D& end() const
+    const Point3LL& end() const
     {
         return end_;
     }
 
-    void setEnd(const Point3D& end);
+    void setEnd(const Point3LL& end);
 
-    std::optional<CroppableSegment3D> intersectionWithXLayer(const double layer_start, const double layer_end) const;
+    std::optional<CroppableSegment3D> intersectionWithXLayer(const coord_t layer_start, const coord_t layer_end) const;
 
-    std::optional<CroppableSegment3D> intersectionWithYLayer(const double layer_start, const double layer_end) const;
+    std::optional<CroppableSegment3D> intersectionWithYLayer(const coord_t layer_start, const coord_t layer_end) const;
 
-    std::optional<CroppableSegment3D> intersectionWithZLayer(const double layer_start, const double layer_end) const;
+    std::optional<CroppableSegment3D> intersectionWithZLayer(const coord_t layer_start, const coord_t layer_end) const;
 
 private:
     enum class LayerInsideness
@@ -46,38 +46,38 @@ private:
         Above
     };
 
-    Point3D pointAtX(const double x) const;
+    Point3LL pointAtX(const coord_t x) const;
 
-    Point3D pointAtY(const double y) const;
+    Point3LL pointAtY(const coord_t y) const;
 
-    Point3D pointAtZ(const double z) const;
+    Point3LL pointAtZ(const coord_t z) const;
 
     std::optional<CroppableSegment3D> intersectionWithLayer(
-        const double start_coordinate,
-        const double end_coordinate,
-        const double layer_start,
-        const double layer_end,
-        const std::function<Point3D(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end)>& function_crop_point) const;
+        const coord_t start_coordinate,
+        const coord_t end_coordinate,
+        const coord_t layer_start,
+        const coord_t layer_end,
+        const std::function<Point3LL(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end)>& function_crop_point) const;
 
-    static Point3D croppedPoint(
-        const Point3D& point,
+    static Point3LL croppedPoint(
+        const Point3LL& point,
         const LayerInsideness insideness,
-        const double layer_start,
-        const double layer_end,
-        const std::function<Point3D(const double)>& function_point_at);
+        const coord_t layer_start,
+        const coord_t layer_end,
+        const std::function<Point3LL(const coord_t)>& function_point_at);
 
-    Point3D croppedPointX(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const;
+    Point3LL croppedPointX(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end) const;
 
-    Point3D croppedPointY(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const;
+    Point3LL croppedPointY(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end) const;
 
-    Point3D croppedPointZ(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const;
+    Point3LL croppedPointZ(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end) const;
 
-    static LayerInsideness pointIsInside(const double point, const double layer_start, const double layer_end);
+    static LayerInsideness pointIsInside(const coord_t point, const coord_t layer_start, const coord_t layer_end);
 
 private:
-    Point3D direction_;
-    Point3D start_;
-    Point3D end_;
+    Point3LL direction_;
+    Point3LL start_;
+    Point3LL end_;
 };
 
 } // namespace cura

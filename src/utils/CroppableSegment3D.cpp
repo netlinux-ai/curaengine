@@ -7,37 +7,37 @@
 namespace cura
 {
 
-CroppableSegment3D::CroppableSegment3D(const Point3D& start, const Point3D& end)
+CroppableSegment3D::CroppableSegment3D(const Point3LL& start, const Point3LL& end)
     : direction_(end - start)
     , start_(start)
     , end_(end)
 {
 }
 
-Point3D CroppableSegment3D::pointAtX(const double x) const
+Point3LL CroppableSegment3D::pointAtX(const coord_t x) const
 {
-    const double factor = (x - start_.x_) / (direction_.x_);
-    return Point3D(x, start_.y_ + factor * direction_.y_, start_.z_ + factor * direction_.z_);
+    const double factor = static_cast<double>(x - start_.x_) / (direction_.x_);
+    return Point3LL(x, std::llrint(start_.y_ + factor * direction_.y_), std::llrint(start_.z_ + factor * direction_.z_));
 }
 
-Point3D CroppableSegment3D::pointAtY(const double y) const
+Point3LL CroppableSegment3D::pointAtY(const coord_t y) const
 {
-    const double factor = (y - start_.y_) / (direction_.y_);
-    return Point3D(start_.x_ + factor * direction_.x_, y, start_.z_ + factor * direction_.z_);
+    const double factor = static_cast<double>(y - start_.y_) / (direction_.y_);
+    return Point3LL(std::llrint(start_.x_ + factor * direction_.x_), y, std::llrint(start_.z_ + factor * direction_.z_));
 }
 
-Point3D CroppableSegment3D::pointAtZ(const double z) const
+Point3LL CroppableSegment3D::pointAtZ(const coord_t z) const
 {
-    const double factor = (z - start_.z_) / (direction_.z_);
-    return Point3D(start_.x_ + factor * direction_.x_, start_.y_ + factor * direction_.y_, z);
+    const double factor = static_cast<double>(z - start_.z_) / (direction_.z_);
+    return Point3LL(std::llrint(start_.x_ + factor * direction_.x_), std::llrint(start_.y_ + factor * direction_.y_), z);
 }
 
 std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithLayer(
-    const double start_coordinate,
-    const double end_coordinate,
-    const double layer_start,
-    const double layer_end,
-    const std::function<Point3D(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end)>& function_crop_point) const
+    const coord_t start_coordinate,
+    const coord_t end_coordinate,
+    const coord_t layer_start,
+    const coord_t layer_end,
+    const std::function<Point3LL(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end)>& function_crop_point) const
 {
     const LayerInsideness segment_start_inside = pointIsInside(start_coordinate, layer_start, layer_end);
     const LayerInsideness segment_end_inside = pointIsInside(end_coordinate, layer_start, layer_end);
@@ -54,8 +54,8 @@ std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithLayer(
         return std::nullopt;
     }
 
-    const Point3D new_segment_start = function_crop_point(start_, segment_start_inside, layer_start, layer_end);
-    const Point3D new_segment_end = function_crop_point(end_, segment_end_inside, layer_start, layer_end);
+    const Point3LL new_segment_start = function_crop_point(start_, segment_start_inside, layer_start, layer_end);
+    const Point3LL new_segment_end = function_crop_point(end_, segment_end_inside, layer_start, layer_end);
 
     if ((new_segment_end - new_segment_start).vSize2() < EPSILON * EPSILON)
     {
@@ -65,7 +65,7 @@ std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithLayer(
     return CroppableSegment3D(new_segment_start, new_segment_end);
 }
 
-CroppableSegment3D::LayerInsideness CroppableSegment3D::pointIsInside(const double point, const double layer_start, const double layer_end)
+CroppableSegment3D::LayerInsideness CroppableSegment3D::pointIsInside(const coord_t point, const coord_t layer_start, const coord_t layer_end)
 {
     if (point < layer_start)
     {
@@ -80,12 +80,12 @@ CroppableSegment3D::LayerInsideness CroppableSegment3D::pointIsInside(const doub
     return LayerInsideness::Inside;
 }
 
-Point3D CroppableSegment3D::croppedPoint(
-    const Point3D& point,
+Point3LL CroppableSegment3D::croppedPoint(
+    const Point3LL& point,
     const LayerInsideness insideness,
-    const double layer_start,
-    const double layer_end,
-    const std::function<Point3D(const double)>& function_point_at)
+    const coord_t layer_start,
+    const coord_t layer_end,
+    const std::function<Point3LL(const coord_t)>& function_point_at)
 {
     switch (insideness)
     {
@@ -97,31 +97,31 @@ Point3D CroppableSegment3D::croppedPoint(
         return function_point_at(layer_end);
     }
 
-    return Point3D();
+    return Point3LL();
 }
 
-Point3D CroppableSegment3D::croppedPointX(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const
+Point3LL CroppableSegment3D::croppedPointX(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end) const
 {
     return croppedPoint(point, insideness, layer_start, layer_end, std::bind(&CroppableSegment3D::pointAtX, this, std::placeholders::_1));
 }
 
-Point3D CroppableSegment3D::croppedPointY(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const
+Point3LL CroppableSegment3D::croppedPointY(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end) const
 {
     return croppedPoint(point, insideness, layer_start, layer_end, std::bind(&CroppableSegment3D::pointAtY, this, std::placeholders::_1));
 }
 
-Point3D CroppableSegment3D::croppedPointZ(const Point3D& point, const LayerInsideness insideness, const double layer_start, const double layer_end) const
+Point3LL CroppableSegment3D::croppedPointZ(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end) const
 {
     return croppedPoint(point, insideness, layer_start, layer_end, std::bind(&CroppableSegment3D::pointAtZ, this, std::placeholders::_1));
 }
 
-void CroppableSegment3D::setEnd(const Point3D& end)
+void CroppableSegment3D::setEnd(const Point3LL& end)
 {
     end_ = end;
     direction_ = end_ - start_;
 }
 
-std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithXLayer(const double layer_start, const double layer_end) const
+std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithXLayer(const coord_t layer_start, const coord_t layer_end) const
 {
     return intersectionWithLayer(
         start_.x_,
@@ -131,7 +131,7 @@ std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithXLayer(con
         std::bind(&CroppableSegment3D::croppedPointX, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 }
 
-std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithYLayer(const double layer_start, const double layer_end) const
+std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithYLayer(const coord_t layer_start, const coord_t layer_end) const
 {
     return intersectionWithLayer(
         start_.y_,
@@ -141,7 +141,7 @@ std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithYLayer(con
         std::bind(&CroppableSegment3D::croppedPointY, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
 }
 
-std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithZLayer(const double layer_start, const double layer_end) const
+std::optional<CroppableSegment3D> CroppableSegment3D::intersectionWithZLayer(const coord_t layer_start, const coord_t layer_end) const
 {
     return intersectionWithLayer(
         start_.z_,
