@@ -8,36 +8,36 @@
 #include <range/v3/algorithm/minmax_element.hpp>
 #include <range/v3/view/transform.hpp>
 
-#include "utils/CroppableSegment3LL.h"
+#include "utils/Segment3LL.h"
 
 
 namespace cura
 {
 
-PlanarPolygon3LL::PlanarPolygon3LL(std::vector<CroppableSegment3LL>&& segments)
+PlanarPolygon3LL::PlanarPolygon3LL(std::vector<Segment3LL>&& segments)
     : segments_(std::move(segments))
 {
 }
 
-PlanarPolygon3LL::PlanarPolygon3LL(const std::initializer_list<CroppableSegment3LL>& segments)
+PlanarPolygon3LL::PlanarPolygon3LL(const std::initializer_list<Segment3LL>& segments)
     : segments_(segments)
 {
 }
 
-std::optional<PlanarPolygon3LL> PlanarPolygon3LL::cropToLayer(
+std::optional<PlanarPolygon3LL> PlanarPolygon3LL::intersectionWithLayer(
     const coord_t layer_start,
     const coord_t layer_end,
-    const std::function<std::optional<CroppableSegment3LL>(const CroppableSegment3LL&, const coord_t, const coord_t)>& function_intersect_with_layer) const
+    const std::function<std::optional<Segment3LL>(const Segment3LL&, const coord_t, const coord_t)>& function_intersect_with_layer) const
 {
-    std::vector<CroppableSegment3LL> new_segments;
+    std::vector<Segment3LL> new_segments;
 
-    const auto join_segments = [&new_segments](const CroppableSegment3LL& next_segment)
+    const auto join_segments = [&new_segments](const Segment3LL& next_segment)
     {
         const coord_t join_distance = (new_segments.back().end() - next_segment.start()).vSize2();
         if (join_distance > EPSILON * EPSILON)
         {
             // Segments are not joined, add a transition segment
-            new_segments.push_back(CroppableSegment3LL(new_segments.back().end(), next_segment.start()));
+            new_segments.push_back(Segment3LL(new_segments.back().end(), next_segment.start()));
         }
         else
         {
@@ -46,9 +46,9 @@ std::optional<PlanarPolygon3LL> PlanarPolygon3LL::cropToLayer(
         }
     };
 
-    for (const CroppableSegment3LL& segment : segments_)
+    for (const Segment3LL& segment : segments_)
     {
-        const std::optional<CroppableSegment3LL> cropped_segment = function_intersect_with_layer(segment, layer_start, layer_end);
+        const std::optional<Segment3LL> cropped_segment = function_intersect_with_layer(segment, layer_start, layer_end);
         if (cropped_segment.has_value())
         {
             if (! new_segments.empty())
@@ -70,25 +70,25 @@ std::optional<PlanarPolygon3LL> PlanarPolygon3LL::cropToLayer(
     return PlanarPolygon3LL(std::move(new_segments));
 }
 
-std::optional<PlanarPolygon3LL> PlanarPolygon3LL::cropToXLayer(const coord_t layer_start_x, const coord_t layer_end_x) const
+std::optional<PlanarPolygon3LL> PlanarPolygon3LL::intersectionWithXLayer(const coord_t layer_start_x, const coord_t layer_end_x) const
 {
-    return cropToLayer(layer_start_x, layer_end_x, &CroppableSegment3LL::intersectionWithXLayer);
+    return intersectionWithLayer(layer_start_x, layer_end_x, &Segment3LL::intersectionWithXLayer);
 }
 
-std::optional<PlanarPolygon3LL> PlanarPolygon3LL::cropToYLayer(const coord_t layer_start_y, const coord_t layer_end_y) const
+std::optional<PlanarPolygon3LL> PlanarPolygon3LL::intersectionWithYLayer(const coord_t layer_start_y, const coord_t layer_end_y) const
 {
-    return cropToLayer(layer_start_y, layer_end_y, &CroppableSegment3LL::intersectionWithYLayer);
+    return intersectionWithLayer(layer_start_y, layer_end_y, &Segment3LL::intersectionWithYLayer);
 }
 
-std::optional<PlanarPolygon3LL> PlanarPolygon3LL::cropToZLayer(const coord_t layer_start_z, const coord_t layer_end_z) const
+std::optional<PlanarPolygon3LL> PlanarPolygon3LL::intersectionWithZLayer(const coord_t layer_start_z, const coord_t layer_end_z) const
 {
-    return cropToLayer(layer_start_z, layer_end_z, &CroppableSegment3LL::intersectionWithZLayer);
+    return intersectionWithLayer(layer_start_z, layer_end_z, &Segment3LL::intersectionWithZLayer);
 }
 
 std::tuple<coord_t, coord_t> PlanarPolygon3LL::minmaxX() const
 {
     return minmax(
-        [](const CroppableSegment3LL& segment)
+        [](const Segment3LL& segment)
         {
             return segment.start().x_;
         });
@@ -97,7 +97,7 @@ std::tuple<coord_t, coord_t> PlanarPolygon3LL::minmaxX() const
 std::tuple<coord_t, coord_t> PlanarPolygon3LL::minmaxY() const
 {
     return minmax(
-        [](const CroppableSegment3LL& segment)
+        [](const Segment3LL& segment)
         {
             return segment.start().y_;
         });
@@ -106,13 +106,13 @@ std::tuple<coord_t, coord_t> PlanarPolygon3LL::minmaxY() const
 std::tuple<coord_t, coord_t> PlanarPolygon3LL::minmaxZ() const
 {
     return minmax(
-        [](const CroppableSegment3LL& segment)
+        [](const Segment3LL& segment)
         {
             return segment.start().z_;
         });
 }
 
-std::tuple<coord_t, coord_t> PlanarPolygon3LL::minmax(const std::function<coord_t(const CroppableSegment3LL& segment)>& get_coordinate) const
+std::tuple<coord_t, coord_t> PlanarPolygon3LL::minmax(const std::function<coord_t(const Segment3LL& segment)>& get_coordinate) const
 {
     const auto segments_coordinates = segments_ | ranges::views::transform(get_coordinate);
     auto result = ranges::minmax_element(segments_coordinates);

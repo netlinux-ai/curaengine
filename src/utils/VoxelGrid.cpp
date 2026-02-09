@@ -7,9 +7,9 @@
 #include <spdlog/spdlog.h>
 
 #include "utils/AABB3D.h"
-#include "utils/CroppableSegment3LL.h"
 #include "utils/OBJ.h"
 #include "utils/PlanarPolygon3LL.h"
+#include "utils/Segment3LL.h"
 
 
 namespace cura
@@ -153,9 +153,9 @@ std::vector<VoxelGrid::LocalCoordinates> VoxelGrid::getTraversedVoxels(const Tri
 {
     std::vector<LocalCoordinates> traversed_voxels;
 
-    const CroppableSegment3LL s1(triangle[0], triangle[1]);
-    const CroppableSegment3LL s2(triangle[1], triangle[2]);
-    const CroppableSegment3LL s3(triangle[2], triangle[0]);
+    const Segment3LL s1(triangle[0], triangle[1]);
+    const Segment3LL s2(triangle[1], triangle[2]);
+    const Segment3LL s3(triangle[2], triangle[0]);
 
     const PlanarPolygon3LL polygon({ s1, s2, s3 });
 
@@ -168,7 +168,7 @@ std::vector<VoxelGrid::LocalCoordinates> VoxelGrid::getTraversedVoxels(const Tri
         const double layer_start_x = toGlobalX(x, false);
         const double layer_end_x = toGlobalX(x + 1, false);
 
-        const std::optional<PlanarPolygon3LL> polygon_cropped_x = polygon.cropToXLayer(layer_start_x, layer_end_x);
+        const std::optional<PlanarPolygon3LL> polygon_cropped_x = polygon.intersectionWithXLayer(layer_start_x, layer_end_x);
         if (! polygon_cropped_x.has_value())
         {
             continue;
@@ -183,7 +183,7 @@ std::vector<VoxelGrid::LocalCoordinates> VoxelGrid::getTraversedVoxels(const Tri
             const double layer_start_y = toGlobalY(y, false);
             const double layer_end_y = toGlobalY(y + 1, false);
 
-            const std::optional<PlanarPolygon3LL> polygon_cropped_xy = polygon_cropped_x->cropToYLayer(layer_start_y, layer_end_y);
+            const std::optional<PlanarPolygon3LL> polygon_cropped_xy = polygon_cropped_x->intersectionWithYLayer(layer_start_y, layer_end_y);
             if (! polygon_cropped_xy.has_value())
             {
                 continue;
@@ -198,7 +198,7 @@ std::vector<VoxelGrid::LocalCoordinates> VoxelGrid::getTraversedVoxels(const Tri
                 const double layer_start_z = toGlobalZ(z, false);
                 const double layer_end_z = toGlobalZ(z + 1, false);
 
-                const std::optional<PlanarPolygon3LL> polygon_cropped_xyz = polygon_cropped_xy->cropToZLayer(layer_start_z, layer_end_z);
+                const std::optional<PlanarPolygon3LL> polygon_cropped_xyz = polygon_cropped_xy->intersectionWithZLayer(layer_start_z, layer_end_z);
                 if (polygon_cropped_xyz.has_value())
                 {
                     traversed_voxels.push_back(LocalCoordinates(x, y, z));
