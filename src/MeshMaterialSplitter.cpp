@@ -18,7 +18,7 @@
 #include "geometry/OpenPolyline.h"
 #include "geometry/Shape.h"
 #include "geometry/Triangle2F.h"
-#include "geometry/Triangle3D.h"
+#include "geometry/Triangle3LL.h"
 #include "mesh.h"
 #include "progress/Progress.h"
 #include "slicer.h"
@@ -105,7 +105,7 @@ bool makeVoxelGridFromTexture(const Mesh& mesh, const std::shared_ptr<TextureDat
             }
 
             const Triangle2F face_uvs{ uv0.value(), uv1.value(), uv2.value() };
-            const Triangle3D triangle{ mesh.vertices_[face.vertex_index_[0]].p_, mesh.vertices_[face.vertex_index_[1]].p_, mesh.vertices_[face.vertex_index_[2]].p_ };
+            const Triangle3LL triangle{ mesh.vertices_[face.vertex_index_[0]].p_, mesh.vertices_[face.vertex_index_[1]].p_, mesh.vertices_[face.vertex_index_[2]].p_ };
 
             for (const VoxelGrid::LocalCoordinates& traversed_voxel : voxel_grid.getTraversedVoxels(triangle))
             {

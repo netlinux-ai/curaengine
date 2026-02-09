@@ -1,8 +1,8 @@
 // Copyright (c) 2025 UltiMaker
 // CuraEngine is released under the terms of the AGPLv3 or higher
 
-#ifndef UTILS_CROPPABLESEGMENT3D_H
-#define UTILS_CROPPABLESEGMENT3D_H
+#ifndef UTILS_CROPPABLESEGMENT3LL_H
+#define UTILS_CROPPABLESEGMENT3LL_H
 
 #include <optional>
 
@@ -15,10 +15,10 @@ namespace cura
 /*!
  * The CroppableSegment is a helper to quickly calculate the intersections of a segment with the X and Y planes.
  */
-class CroppableSegment3D
+class CroppableSegment3LL
 {
 public:
-    CroppableSegment3D(const Point3LL& start, const Point3LL& end);
+    CroppableSegment3LL(const Point3LL& start, const Point3LL& end);
 
     const Point3LL& start() const
     {
@@ -32,11 +32,11 @@ public:
 
     void setEnd(const Point3LL& end);
 
-    std::optional<CroppableSegment3D> intersectionWithXLayer(const coord_t layer_start, const coord_t layer_end) const;
+    std::optional<CroppableSegment3LL> intersectionWithXLayer(const coord_t layer_start, const coord_t layer_end) const;
 
-    std::optional<CroppableSegment3D> intersectionWithYLayer(const coord_t layer_start, const coord_t layer_end) const;
+    std::optional<CroppableSegment3LL> intersectionWithYLayer(const coord_t layer_start, const coord_t layer_end) const;
 
-    std::optional<CroppableSegment3D> intersectionWithZLayer(const coord_t layer_start, const coord_t layer_end) const;
+    std::optional<CroppableSegment3LL> intersectionWithZLayer(const coord_t layer_start, const coord_t layer_end) const;
 
 private:
     enum class LayerInsideness
@@ -52,7 +52,7 @@ private:
 
     Point3LL pointAtZ(const coord_t z) const;
 
-    std::optional<CroppableSegment3D> intersectionWithLayer(
+    std::optional<CroppableSegment3LL> intersectionWithLayer(
         const coord_t start_coordinate,
         const coord_t end_coordinate,
         const coord_t layer_start,

@@ -23,7 +23,7 @@
 namespace cura::MeshUtils
 {
 
-std::optional<Point3D> getBarycentricCoordinates(const Point3LL& point, const Triangle3D& triangle)
+std::optional<Point3D> getBarycentricCoordinates(const Point3LL& point, const Triangle3LL& triangle)
 {
     // Calculate vectors from p0 to p1 and p0 to p2
     const Point3LL v0(triangle[1] - triangle[0]);

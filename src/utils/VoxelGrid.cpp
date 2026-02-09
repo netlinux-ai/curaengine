@@ -7,9 +7,9 @@
 #include <spdlog/spdlog.h>
 
 #include "utils/AABB3D.h"
-#include "utils/CroppableSegment3D.h"
+#include "utils/CroppableSegment3LL.h"
 #include "utils/OBJ.h"
-#include "utils/PlanarPolygon3D.h"
+#include "utils/PlanarPolygon3LL.h"
 
 
 namespace cura
@@ -149,53 +149,56 @@ double VoxelGrid::toGlobalZ(const uint16_t z, const bool at_center) const
     return (z * resolution_.z_) + origin_.z_ + (at_center ? resolution_.z_ / 2.0 : 0.0);
 }
 
-std::vector<VoxelGrid::LocalCoordinates> VoxelGrid::getTraversedVoxels(const Triangle3D& triangle) const
+std::vector<VoxelGrid::LocalCoordinates> VoxelGrid::getTraversedVoxels(const Triangle3LL& triangle) const
 {
     std::vector<LocalCoordinates> traversed_voxels;
 
-    const CroppableSegment3D s1(triangle[0], triangle[1]);
-    const CroppableSegment3D s2(triangle[1], triangle[2]);
-    const CroppableSegment3D s3(triangle[2], triangle[0]);
+    const CroppableSegment3LL s1(triangle[0], triangle[1]);
+    const CroppableSegment3LL s2(triangle[1], triangle[2]);
+    const CroppableSegment3LL s3(triangle[2], triangle[0]);
 
-    const PlanarPolygon3D polygon({ s1, s2, s3 });
+    const PlanarPolygon3LL polygon({ s1, s2, s3 });
 
-    const uint16_t xmin = toLocalX(polygon.minX());
-    const uint16_t xmax = toLocalX(polygon.maxX());
+    std::tuple<coord_t, coord_t> minmax_x = polygon.minmaxX();
+    const uint16_t min_x = toLocalX(std::get<0>(minmax_x));
+    const uint16_t max_x = toLocalX(std::get<1>(minmax_x));
 
-    for (uint16_t x = xmin; x <= xmax; ++x)
+    for (uint16_t x = min_x; x <= max_x; ++x)
     {
         const double layer_start_x = toGlobalX(x, false);
         const double layer_end_x = toGlobalX(x + 1, false);
 
-        const std::optional<PlanarPolygon3D> polygon_cropped_x = polygon.cropToXLayer(layer_start_x, layer_end_x);
+        const std::optional<PlanarPolygon3LL> polygon_cropped_x = polygon.cropToXLayer(layer_start_x, layer_end_x);
         if (! polygon_cropped_x.has_value())
         {
             continue;
         }
 
-        const uint16_t ymin = toLocalY(polygon_cropped_x->minY());
-        const uint16_t ymax = toLocalY(polygon_cropped_x->maxY());
+        std::tuple<coord_t, coord_t> minmax_y = polygon_cropped_x->minmaxY();
+        const uint16_t min_y = toLocalY(std::get<0>(minmax_y));
+        const uint16_t max_y = toLocalY(std::get<1>(minmax_y));
 
-        for (uint16_t y = ymin; y <= ymax; ++y)
+        for (uint16_t y = min_y; y <= max_y; ++y)
         {
             const double layer_start_y = toGlobalY(y, false);
             const double layer_end_y = toGlobalY(y + 1, false);
 
-            const std::optional<PlanarPolygon3D> polygon_cropped_xy = polygon_cropped_x->cropToYLayer(layer_start_y, layer_end_y);
+            const std::optional<PlanarPolygon3LL> polygon_cropped_xy = polygon_cropped_x->cropToYLayer(layer_start_y, layer_end_y);
             if (! polygon_cropped_xy.has_value())
             {
                 continue;
             }
 
-            const uint16_t zmin = toLocalZ(polygon_cropped_xy->minZ());
-            const uint16_t zmax = toLocalZ(polygon_cropped_xy->maxZ());
+            std::tuple<coord_t, coord_t> minmax_z = polygon_cropped_xy->minmaxZ();
+            const uint16_t min_z = toLocalZ(std::get<0>(minmax_z));
+            const uint16_t max_z = toLocalZ(std::get<1>(minmax_z));
 
-            for (uint16_t z = zmin; z <= zmax; ++z)
+            for (uint16_t z = min_z; z <= max_z; ++z)
             {
                 const double layer_start_z = toGlobalZ(z, false);
                 const double layer_end_z = toGlobalZ(z + 1, false);
 
-                const std::optional<PlanarPolygon3D> polygon_cropped_xyz = polygon_cropped_xy->cropToZLayer(layer_start_z, layer_end_z);
+                const std::optional<PlanarPolygon3LL> polygon_cropped_xyz = polygon_cropped_xy->cropToZLayer(layer_start_z, layer_end_z);
                 if (polygon_cropped_xyz.has_value())
                 {
                     traversed_voxels.push_back(LocalCoordinates(x, y, z));
