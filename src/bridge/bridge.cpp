@@ -445,6 +445,12 @@ std::vector<ExpansionRange> makeExpandedRanges(const TransformedSegment& segment
     std::vector<ExpansionRange> expanded_ranges;
     expanded_ranges.push_back(ExpansionRange(segment.minY(), segment.maxY(), &segment));
 
+    if (! expanded_ranges.front().isValid())
+    {
+        // Do not try to expand horizontal segments
+        return expanded_ranges;
+    }
+
     // Now loop on every infill line and update the expansion ranges accordingly
     for (const TransformedSegment& infill_line_below : infill_lines_below)
     {
@@ -580,7 +586,7 @@ void updateExpandedPolygon(
 
             if (! expanded_range.isProjected())
             {
-                // This is an unitialized range, use the raw segment
+                // This is an unprojected range, use the raw segment
                 const coord_t position_switch_y = expand_direction > 0 ? expanded_range.minY() : expanded_range.maxY();
                 next_start_position = Point2LL(LinearAlg2D::lineHorizontalLineIntersection(segment.getStart(), segment.getEnd(), position_switch_y).value_or(0), position_switch_y);
             }
@@ -622,12 +628,6 @@ void expandSegment(
     Polygon& expanded_polygon,
     const TransformedSegment*& current_supporting_infill_line)
 {
-    if (fuzzy_equal(segment.minY(), segment.maxY()))
-    {
-        // Skip horizontal segments, holes will be filled by expanding their previous and next segments
-        return;
-    }
-
     // 1 means expand to the right, -1 expand to the left
     const int8_t expand_direction = sign(segment.getEnd().Y - segment.getStart().Y);
 
