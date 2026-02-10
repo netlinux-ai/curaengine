@@ -656,6 +656,21 @@ std::tuple<Shape, AngleDegrees> makeBridgeOverInfillPrintable(
         return {};
     }
 
+    Shape unsupported_infill_below_skin_area = infill_below_skin_area;
+    for (const SliceLayerPart& part_below : mesh.layers[layer_nr - 1].parts)
+    {
+        for (const SkinPart& skin_part_below : part_below.skin_parts)
+        {
+            // Ignore areas that actually have skin below, we can't bridge over them
+            unsupported_infill_below_skin_area = unsupported_infill_below_skin_area.difference(skin_part_below.outline);
+        }
+    }
+
+    if (unsupported_infill_below_skin_area.empty())
+    {
+        return {};
+    }
+
     // Calculate the proper bridging angle, according to the type of infill below
     const AngleDegrees bridge_angle = bridgeOverInfillAngle(mesh, layer_nr);
 
@@ -680,7 +695,7 @@ std::tuple<Shape, AngleDegrees> makeBridgeOverInfillPrintable(
 
     // Now expand each polygon by expanding its segments horizontally according to the supporting infill lines
     Shape transformed_expanded_infill_below_skin_area;
-    for (const Polygon& infill_below_skin_polygon : infill_below_skin_area)
+    for (const Polygon& infill_below_skin_polygon : unsupported_infill_below_skin_area)
     {
         const TransformedShape transformed_infill_below_skin_polygon(infill_below_skin_polygon, matrix);
 
