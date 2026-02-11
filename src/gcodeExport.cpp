@@ -429,7 +429,7 @@ Point2LL GCodeExport::getPositionXY() const
     return current_position_.toPoint2LL();
 }
 
-int GCodeExport::getPositionZ() const
+coord_t GCodeExport::getPositionZ() const
 {
     return current_position_.z_;
 }
