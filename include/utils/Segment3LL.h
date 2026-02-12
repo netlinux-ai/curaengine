@@ -37,7 +37,8 @@ public:
 
     /*!
      * Intersects the segment with a "layer" on the X plane, e.g. a pair or YZ plans
-     * @param layer_start The X coordinate of the lowest YZ plane*     * @param layer_end The X coordinate of the highest YZ plane
+     * @param layer_start The X coordinate of the lowest YZ plane
+     * @param layer_end The X coordinate of the highest YZ plane
      * @return The segment that is a sub-part of the current segment intersected with the layer, or nullopt if the intersection is empty
      */
     std::optional<Segment3LL> intersectionWithXLayer(const coord_t layer_start, const coord_t layer_end) const;
@@ -66,13 +67,25 @@ private:
         Above
     };
 
-    /*! Get the point on the segment that is at the given X coordinate */
+    /*!
+     * Get the point on the segment that is at the given X coordinate. If the X coordinate doesn't fit in the segment, it is treated as an infinite line and the returned point
+     * will be outside the segment
+     * @warning Since this function is private, it does not perform any check and assume the segment is not parallel to the X axis. It will crash otherwise.
+     */
     Point3LL pointAtX(const coord_t x) const;
 
-    /*! Get the point on the segment that is at the given Y coordinate */
+    /*!
+     * Get the point on the segment that is at the given Y coordinate. If the Y coordinate doesn't fit in the segment, it is treated as an infinite line and the returned point
+     * will be outside the segment
+     * @warning Since this function is private, it does not perform any check and assume the segment is not parallel to the Y axis. It will crash otherwise.
+     */
     Point3LL pointAtY(const coord_t y) const;
 
-    /*! Get the point on the segment that is at the given Z coordinate */
+    /*!
+     * Get the point on the segment that is at the given Z coordinate. If the Z coordinate doesn't fit in the segment, it is treated as an infinite line and the returned point
+     * will be outside the segment
+     * @warning Since this function is private, it does not perform any check and assume the segment is not parallel to the Z axis. It will crash otherwise.
+     */
     Point3LL pointAtZ(const coord_t z) const;
 
     /*!
@@ -114,6 +127,7 @@ private:
      * @param layer_start The coordinate of the lowest plane
      * @param layer_end The coordinate of the highest plane
      * @return A point on the segment that is inside the layer
+     * @warning Since this function is private, it does not perform any check and assume the segment is not parallel to the X axis. It will crash otherwise.
      */
     Point3LL croppedPointX(const Point3LL& point, const LayerLocation insideness, const coord_t layer_start, const coord_t layer_end) const;
 
@@ -124,6 +138,7 @@ private:
      * @param layer_start The coordinate of the lowest plane
      * @param layer_end The coordinate of the highest plane
      * @return A point on the segment that is inside the layer
+     * @warning Since this function is private, it does not perform any check and assume the segment is not parallel to the Y axis. It will crash otherwise.
      */
     Point3LL croppedPointY(const Point3LL& point, const LayerLocation insideness, const coord_t layer_start, const coord_t layer_end) const;
 
@@ -134,6 +149,7 @@ private:
      * @param layer_start The coordinate of the lowest plane
      * @param layer_end The coordinate of the highest plane
      * @return A point on the segment that is inside the layer
+     * @warning Since this function is private, it does not perform any check and assume the segment is not parallel to the Z axis. It will crash otherwise.
      */
     Point3LL croppedPointZ(const Point3LL& point, const LayerLocation insideness, const coord_t layer_start, const coord_t layer_end) const;
 
