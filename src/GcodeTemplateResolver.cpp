@@ -88,7 +88,6 @@ void processStatement(std::string& output, const GcodeConditionState condition_s
  * @param context_extruder_nr The default contextual extruder number, which should be the current extruder number when dealing when an extruder start/end GCode, and nullopt when
  *                            dealing with the global machine start/end gcode
  * @param environments The environments adapters mapped to the settings
- * @param extra_settings Extra settings to be locally added to the environment
  * @return True if the expression processing succeeded, false if an error occurred
  */
 bool processExpression(
@@ -267,7 +266,7 @@ bool processExpression(
     return true;
 }
 
-std::string resolveGCodeTemplate(const std::string& input, const std::optional<int> context_extruder_nr, const std::unordered_map<std::string, std::string>& extra_settings)
+std::string resolveGCodeTemplate(const std::string& input, const std::optional<int> context_extruder_nr, const std::unordered_map<std::string, cfe::eval::Value>& extra_settings)
 {
     std::string output;
     GcodeConditionState condition_state = GcodeConditionState::OutsideCondition;
