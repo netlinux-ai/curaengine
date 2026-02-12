@@ -195,7 +195,7 @@ bool processExpression(
 
     if (match_extruder_nr.matched && match_extruder_nr.length() > 0)
     {
-        const zeus::expected<cfe::eval::Value, EvaluateResult> extruder_nr_result = evaluateExpression(match_extruder_nr.str(), environments.at(std::nullopt));
+        const zeus::expected<cfe::eval::Value, EvaluateResult> extruder_nr_result = evaluateExpression(match_extruder_nr.str(), environments.at(context_extruder_nr));
         if (! extruder_nr_result.has_value())
         {
             return false;
