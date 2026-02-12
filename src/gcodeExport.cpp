@@ -1431,7 +1431,8 @@ PrintFeatureType
 
 void GCodeExport::startExtruder(const size_t new_extruder)
 {
-    const std::unordered_map<std::string, std::string> extra_settings = { { "previous_extruder_nr", std::to_string(current_extruder_) } };
+    const std::unordered_map<std::string, std::string> extra_settings
+        = { { "previous_extruder_nr", std::to_string(current_extruder_) }, { "next_extruder_nr", std::to_string(new_extruder) } };
     const auto extruder_settings = Application::getInstance().current_slice_->scene.extruders[new_extruder].settings_;
     const auto prestart_code = GcodeTemplateResolver::resolveGCodeTemplate(extruder_settings.get<std::string>("machine_extruder_prestart_code"), new_extruder, extra_settings);
     const auto start_code = GcodeTemplateResolver::resolveGCodeTemplate(extruder_settings.get<std::string>("machine_extruder_start_code"), new_extruder, extra_settings);
@@ -1521,7 +1522,8 @@ void GCodeExport::switchExtruder(size_t new_extruder, const RetractionConfig& re
 
     resetExtrusionValue(); // zero the E value on the old extruder, so that the current_e_value is registered on the old extruder
 
-    const std::unordered_map<std::string, std::string> extra_settings = { { "next_extruder_nr", std::to_string(new_extruder) } };
+    const std::unordered_map<std::string, std::string> extra_settings
+        = { { "previous_extruder_nr", std::to_string(current_extruder_) }, { "next_extruder_nr", std::to_string(new_extruder) } };
     const auto end_code = GcodeTemplateResolver::resolveGCodeTemplate(old_extruder_settings.get<std::string>("machine_extruder_end_code"), current_extruder_, extra_settings);
 
     if (! end_code.empty())
