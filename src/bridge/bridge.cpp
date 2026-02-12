@@ -445,6 +445,12 @@ std::vector<ExpansionRange> makeExpandedRanges(const TransformedSegment& segment
     std::vector<ExpansionRange> expanded_ranges;
     expanded_ranges.push_back(ExpansionRange(segment.minY(), segment.maxY(), &segment));
 
+    if (! expanded_ranges.front().isValid())
+    {
+        // Do not try to expand horizontal segments
+        return expanded_ranges;
+    }
+
     // Now loop on every infill line and update the expansion ranges accordingly
     for (const TransformedSegment& infill_line_below : infill_lines_below)
     {
@@ -580,7 +586,7 @@ void updateExpandedPolygon(
 
             if (! expanded_range.isProjected())
             {
-                // This is an unitialized range, use the raw segment
+                // This is an unprojected range, use the raw segment
                 const coord_t position_switch_y = expand_direction > 0 ? expanded_range.minY() : expanded_range.maxY();
                 next_start_position = Point2LL(LinearAlg2D::lineHorizontalLineIntersection(segment.getStart(), segment.getEnd(), position_switch_y).value_or(0), position_switch_y);
             }
@@ -622,12 +628,6 @@ void expandSegment(
     Polygon& expanded_polygon,
     const TransformedSegment*& current_supporting_infill_line)
 {
-    if (fuzzy_equal(segment.minY(), segment.maxY()))
-    {
-        // Skip horizontal segments, holes will be filled by expanding their previous and next segments
-        return;
-    }
-
     // 1 means expand to the right, -1 expand to the left
     const int8_t expand_direction = sign(segment.getEnd().Y - segment.getStart().Y);
 
@@ -656,6 +656,21 @@ std::tuple<Shape, AngleDegrees> makeBridgeOverInfillPrintable(
         return {};
     }
 
+    Shape unsupported_infill_below_skin_area = infill_below_skin_area;
+    for (const SliceLayerPart& part_below : mesh.layers[layer_nr - 1].parts)
+    {
+        for (const SkinPart& skin_part_below : part_below.skin_parts)
+        {
+            // Ignore areas that actually have skin below, we can't bridge over them
+            unsupported_infill_below_skin_area = unsupported_infill_below_skin_area.difference(skin_part_below.outline);
+        }
+    }
+
+    if (unsupported_infill_below_skin_area.empty())
+    {
+        return {};
+    }
+
     // Calculate the proper bridging angle, according to the type of infill below
     const AngleDegrees bridge_angle = bridgeOverInfillAngle(mesh, layer_nr);
 
@@ -680,7 +695,7 @@ std::tuple<Shape, AngleDegrees> makeBridgeOverInfillPrintable(
 
     // Now expand each polygon by expanding its segments horizontally according to the supporting infill lines
     Shape transformed_expanded_infill_below_skin_area;
-    for (const Polygon& infill_below_skin_polygon : infill_below_skin_area)
+    for (const Polygon& infill_below_skin_polygon : unsupported_infill_below_skin_area)
     {
         const TransformedShape transformed_infill_below_skin_polygon(infill_below_skin_polygon, matrix);
 

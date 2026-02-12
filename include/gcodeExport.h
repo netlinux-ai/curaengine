@@ -283,7 +283,7 @@ public:
 
     Point2LL getPositionXY() const;
 
-    int getPositionZ() const;
+    coord_t getPositionZ() const;
 
     int getExtruderNr() const;
 

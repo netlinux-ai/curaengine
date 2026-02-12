@@ -1519,7 +1519,6 @@ std::tuple<size_t, Point2LL> LayerPlan::addSplitWall(
                     const double destination_factor = static_cast<double>(segment_processed_distance + length_to_process) / line_length;
                     split_destination = cura::lerp(p0, p1, destination_factor);
 
-                    double scarf_segment_flow_ratio = 1.0;
                     double scarf_factor_destination = 1.0; // Out of range, scarf is done => 1.0
                     if (process_scarf)
                     {
@@ -1530,18 +1529,6 @@ std::tuple<size_t, Point2LL> LayerPlan::addSplitWall(
                         if (! is_scarf_closure)
                         {
                             split_destination.z_ = std::llrint(std::lerp(scarf_max_z_offset, 0.0, scarf_factor_destination));
-                        }
-
-                        // Interpolate flow according to interpolation factor average, because it can't be different
-                        // at start and end positions
-                        const double scarf_factor_average = (scarf_factor_origin + scarf_factor_destination) / 2.0;
-                        if (is_scarf_closure)
-                        {
-                            scarf_segment_flow_ratio = std::lerp(1.0, scarf_seam_start_ratio, scarf_factor_average);
-                        }
-                        else
-                        {
-                            scarf_segment_flow_ratio = std::lerp(scarf_seam_start_ratio, 1.0, scarf_factor_average);
                         }
 
                         if (first_split)
@@ -1579,7 +1566,7 @@ std::tuple<size_t, Point2LL> LayerPlan::addSplitWall(
                         split_origin,
                         split_destination,
                         accelerate_speed_factor * decelerate_speed_factor,
-                        flow_ratio * scarf_segment_flow_ratio,
+                        flow_ratio,
                         line_width_ratio,
                         distance_to_bridge_start.value_or(0));
 
@@ -2869,7 +2856,21 @@ void LayerPlan::writeExtrusionRelativeZ(
     PrintFeatureType feature,
     bool update_extrusion_offset)
 {
-    gcode.writeExtrusion(position + Point3LL(0, 0, z_ + path_z_offset), speed, extrusion_mm3_per_mm, feature, update_extrusion_offset);
+    Ratio thickness_factor;
+    const coord_t z_offset_start = gcode.getPositionZ() - z_;
+    if (z_offset_start != 0 || path_z_offset != 0)
+    {
+        // Make average flow according to Z offset, because it can't be different at start and end positions
+        const Ratio thickness_factor_start = std::clamp(1.0 + (static_cast<double>(z_offset_start) / layer_thickness_), 0.0, 1.0);
+        const Ratio thickness_factor_end = std::clamp(1.0 + (static_cast<double>(path_z_offset) / layer_thickness_), 0.0, 1.0);
+        thickness_factor = (thickness_factor_start + thickness_factor_end) / 2.0;
+    }
+    else
+    {
+        thickness_factor = 1.0;
+    }
+
+    gcode.writeExtrusion(position + Point3LL(0, 0, z_ + path_z_offset), speed, extrusion_mm3_per_mm * thickness_factor, feature, update_extrusion_offset);
 }
 
 void LayerPlan::addLinesMonotonic(

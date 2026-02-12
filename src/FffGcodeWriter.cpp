@@ -1308,7 +1308,7 @@ FffGcodeWriter::ProcessLayerResult FffGcodeWriter::processLayer(const SliceDataS
                 {
                     addMeshLayerToGCode(storage, mesh, extruder_nr, mesh_config, gcode_layer);
                 }
-                time_keeper.registerTime(fmt::format("Mesh {}", mesh_idx));
+                time_keeper.registerTime(fmt::format("Mesh {}", mesh->mesh_name));
             }
         }
     }
