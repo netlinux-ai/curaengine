@@ -72,8 +72,6 @@ set(engine_SRCS # Except main.cpp.
         src/PrimeTower/PrimeTowerInterleaved.cpp
         src/raft.cpp
         src/Scene.cpp
-        src/SkeletalTrapezoidation.cpp
-        src/SkeletalTrapezoidationGraph.cpp
         src/skin.cpp
         src/SkirtBrim.cpp
         src/SupportInfillPart.cpp
@@ -90,6 +88,11 @@ set(engine_SRCS # Except main.cpp.
         src/TreeSupport.cpp
         src/WallsComputation.cpp
         src/WallToolPaths.cpp
+
+        src/arachne/SkeletalTrapezoidation.cpp
+        src/arachne/SkeletalTrapezoidationGraph.cpp
+        src/arachne/STHalfEdge.cpp
+        src/arachne/STHalfEdgeNode.cpp
 
         src/BeadingStrategy/BeadingStrategy.cpp
         src/BeadingStrategy/BeadingStrategyFactory.cpp
@@ -111,6 +114,7 @@ set(engine_SRCS # Except main.cpp.
         src/communication/EmscriptenCommunication.cpp
         src/communication/Listener.cpp
 
+        src/infill/AbstractLinesInfill.cpp
         src/infill/ImageBasedDensityProvider.cpp
         src/infill/NoZigZagConnectorProcessor.cpp
         src/infill/ZigzagConnectorProcessor.cpp
@@ -118,6 +122,7 @@ set(engine_SRCS # Except main.cpp.
         src/infill/LightningGenerator.cpp
         src/infill/LightningLayer.cpp
         src/infill/LightningTreeNode.cpp
+        src/infill/RegularNGonalInfill.cpp
         src/infill/SierpinskiFill.cpp
         src/infill/SierpinskiFillProvider.cpp
         src/infill/SubDivCube.cpp
