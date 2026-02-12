@@ -39,14 +39,14 @@ std::optional<Segment3LL> Segment3LL::intersectionWithLayer(
     const coord_t end_coordinate,
     const coord_t layer_start,
     const coord_t layer_end,
-    const std::function<Point3LL(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end)>& function_crop_point) const
+    const std::function<Point3LL(const Point3LL& point, const LayerLocation insideness, const coord_t layer_start, const coord_t layer_end)>& function_crop_point) const
 {
-    const LayerInsideness segment_start_inside = pointIsInside(start_coordinate, layer_start, layer_end);
-    const LayerInsideness segment_end_inside = pointIsInside(end_coordinate, layer_start, layer_end);
+    const LayerLocation segment_start_inside = pointIsInside(start_coordinate, layer_start, layer_end);
+    const LayerLocation segment_end_inside = pointIsInside(end_coordinate, layer_start, layer_end);
 
     if (segment_end_inside == segment_start_inside)
     {
-        if (segment_start_inside == LayerInsideness::Inside)
+        if (segment_start_inside == LayerLocation::Inside)
         {
             // Segment is fully inside layer, take it as is
             return *this;
@@ -67,52 +67,52 @@ std::optional<Segment3LL> Segment3LL::intersectionWithLayer(
     return Segment3LL(new_segment_start, new_segment_end);
 }
 
-Segment3LL::LayerInsideness Segment3LL::pointIsInside(const coord_t point, const coord_t layer_start, const coord_t layer_end)
+Segment3LL::LayerLocation Segment3LL::pointIsInside(const coord_t point, const coord_t layer_start, const coord_t layer_end)
 {
     if (point < layer_start)
     {
-        return LayerInsideness::Below;
+        return LayerLocation::Below;
     }
 
     if (point > layer_end)
     {
-        return LayerInsideness::Above;
+        return LayerLocation::Above;
     }
 
-    return LayerInsideness::Inside;
+    return LayerLocation::Inside;
 }
 
 Point3LL Segment3LL::croppedPoint(
     const Point3LL& point,
-    const LayerInsideness insideness,
+    const LayerLocation insideness,
     const coord_t layer_start,
     const coord_t layer_end,
     const std::function<Point3LL(const coord_t)>& function_point_at)
 {
     switch (insideness)
     {
-    case LayerInsideness::Inside:
+    case LayerLocation::Inside:
         return point;
-    case LayerInsideness::Below:
+    case LayerLocation::Below:
         return function_point_at(layer_start);
-    case LayerInsideness::Above:
+    case LayerLocation::Above:
         return function_point_at(layer_end);
     }
 
     return Point3LL();
 }
 
-Point3LL Segment3LL::croppedPointX(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end) const
+Point3LL Segment3LL::croppedPointX(const Point3LL& point, const LayerLocation insideness, const coord_t layer_start, const coord_t layer_end) const
 {
     return croppedPoint(point, insideness, layer_start, layer_end, std::bind(&Segment3LL::pointAtX, this, std::placeholders::_1));
 }
 
-Point3LL Segment3LL::croppedPointY(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end) const
+Point3LL Segment3LL::croppedPointY(const Point3LL& point, const LayerLocation insideness, const coord_t layer_start, const coord_t layer_end) const
 {
     return croppedPoint(point, insideness, layer_start, layer_end, std::bind(&Segment3LL::pointAtY, this, std::placeholders::_1));
 }
 
-Point3LL Segment3LL::croppedPointZ(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end) const
+Point3LL Segment3LL::croppedPointZ(const Point3LL& point, const LayerLocation insideness, const coord_t layer_start, const coord_t layer_end) const
 {
     return croppedPoint(point, insideness, layer_start, layer_end, std::bind(&Segment3LL::pointAtZ, this, std::placeholders::_1));
 }

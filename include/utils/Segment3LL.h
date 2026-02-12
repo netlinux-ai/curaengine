@@ -59,7 +59,7 @@ public:
     std::optional<Segment3LL> intersectionWithZLayer(const coord_t layer_start, const coord_t layer_end) const;
 
 private:
-    enum class LayerInsideness
+    enum class LayerLocation
     {
         Below,
         Inside,
@@ -89,7 +89,7 @@ private:
         const coord_t end_coordinate,
         const coord_t layer_start,
         const coord_t layer_end,
-        const std::function<Point3LL(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end)>& function_crop_point) const;
+        const std::function<Point3LL(const Point3LL& point, const LayerLocation insideness, const coord_t layer_start, const coord_t layer_end)>& function_crop_point) const;
 
     /*!
      * Crops an extremity of the segment so that it ends inside the given layer
@@ -102,7 +102,7 @@ private:
      */
     static Point3LL croppedPoint(
         const Point3LL& point,
-        const LayerInsideness insideness,
+        const LayerLocation insideness,
         const coord_t layer_start,
         const coord_t layer_end,
         const std::function<Point3LL(const coord_t)>& function_point_at);
@@ -115,7 +115,7 @@ private:
      * @param layer_end The coordinate of the highest plane
      * @return A point on the segment that is inside the layer
      */
-    Point3LL croppedPointX(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end) const;
+    Point3LL croppedPointX(const Point3LL& point, const LayerLocation insideness, const coord_t layer_start, const coord_t layer_end) const;
 
     /*!
      * Crops an extremity of the segment so that it ends inside the given Y-aligned layer
@@ -125,7 +125,7 @@ private:
      * @param layer_end The coordinate of the highest plane
      * @return A point on the segment that is inside the layer
      */
-    Point3LL croppedPointY(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end) const;
+    Point3LL croppedPointY(const Point3LL& point, const LayerLocation insideness, const coord_t layer_start, const coord_t layer_end) const;
 
     /*!
      * Crops an extremity of the segment so that it ends inside the given Z-aligned layer
@@ -135,7 +135,7 @@ private:
      * @param layer_end The coordinate of the highest plane
      * @return A point on the segment that is inside the layer
      */
-    Point3LL croppedPointZ(const Point3LL& point, const LayerInsideness insideness, const coord_t layer_start, const coord_t layer_end) const;
+    Point3LL croppedPointZ(const Point3LL& point, const LayerLocation insideness, const coord_t layer_start, const coord_t layer_end) const;
 
     /*!
      * Calculates the insideness of a point in regard to an axis-aligned layer
@@ -144,7 +144,7 @@ private:
      * @param layer_end The coordinate of the highest plane
      * @return Whether the point is below, inside or above the layer
      */
-    static LayerInsideness pointIsInside(const coord_t point, const coord_t layer_start, const coord_t layer_end);
+    static LayerLocation pointIsInside(const coord_t point, const coord_t layer_start, const coord_t layer_end);
 
 private:
     Point3LL start_;
