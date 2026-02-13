@@ -2065,14 +2065,19 @@ OpenPolyline LayerPlan::makeInwardsMove(const std::list<STHalfEdge>& trapezoidal
             const Point2LL p0_start = start_point - outer_segment_p0;
             projection_ratio = dot(p0_start, p0_p1) / vSize2f(p0_p1);
 
-            if (projection_ratio < 0.0 || projection_ratio > 1.0)
+            if (projection_ratio < 0.0)
             {
-                // point is outside segment
-                continue;
+                projection_distance = vSize(start_point - outer_segment_p0);
             }
-
-            const Point2LL projected = lerp(outer_segment_p0, outer_segment_p1, projection_ratio);
-            projection_distance = vSize(start_point - projected);
+            else if (projection_ratio > 1.0)
+            {
+                projection_distance = vSize(start_point - outer_segment_p1);
+            }
+            else
+            {
+                const Point2LL projected = lerp(outer_segment_p0, outer_segment_p1, projection_ratio);
+                projection_distance = vSize(start_point - projected);
+            }
         }
 
         if (! distance_to_closest_segment.has_value() || projection_distance < distance_to_closest_segment.value())
