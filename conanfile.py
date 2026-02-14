@@ -19,7 +19,16 @@ class CuraEngineConan(ConanFile):
     author = "UltiMaker"
     url = "https://github.com/Ultimaker/CuraEngine"
     description = "Powerful, fast and robust engine for converting 3D models into g-code instructions for 3D printers. It is part of the larger open source project Cura."
-    topics = ("cura", "protobuf", "gcode", "c++", "curaengine", "libarcus", "gcode-generation", "3D-printing")
+    topics = (
+        "cura",
+        "protobuf",
+        "gcode",
+        "c++",
+        "curaengine",
+        "libarcus",
+        "gcode-generation",
+        "3D-printing",
+    )
     exports = "LICENSE*"
     settings = "os", "compiler", "build_type", "arch"
     package_type = "application"
@@ -71,14 +80,36 @@ class CuraEngineConan(ConanFile):
         copy(self, "CuraEngine.ico", self.recipe_folder, self.export_sources_folder)
         copy(self, "CuraEngine.rc", self.recipe_folder, self.export_sources_folder)
         copy(self, "LICENSE", self.recipe_folder, self.export_sources_folder)
-        copy(self, "*", os.path.join(self.recipe_folder, "src"), os.path.join(self.export_sources_folder, "src"))
-        copy(self, "*", os.path.join(self.recipe_folder, "include"),
-             os.path.join(self.export_sources_folder, "include"))
-        copy(self, "*", os.path.join(self.recipe_folder, "benchmark"),
-             os.path.join(self.export_sources_folder, "benchmark"))
-        copy(self, "*", os.path.join(self.recipe_folder, "stress_benchmark"),
-             os.path.join(self.export_sources_folder, "stress_benchmark"))
-        copy(self, "*", os.path.join(self.recipe_folder, "tests"), os.path.join(self.export_sources_folder, "tests"))
+        copy(
+            self,
+            "*",
+            os.path.join(self.recipe_folder, "src"),
+            os.path.join(self.export_sources_folder, "src"),
+        )
+        copy(
+            self,
+            "*",
+            os.path.join(self.recipe_folder, "include"),
+            os.path.join(self.export_sources_folder, "include"),
+        )
+        copy(
+            self,
+            "*",
+            os.path.join(self.recipe_folder, "benchmark"),
+            os.path.join(self.export_sources_folder, "benchmark"),
+        )
+        copy(
+            self,
+            "*",
+            os.path.join(self.recipe_folder, "stress_benchmark"),
+            os.path.join(self.export_sources_folder, "stress_benchmark"),
+        )
+        copy(
+            self,
+            "*",
+            os.path.join(self.recipe_folder, "tests"),
+            os.path.join(self.export_sources_folder, "tests"),
+        )
 
     def config_options(self):
         super().config_options()
@@ -104,12 +135,19 @@ class CuraEngineConan(ConanFile):
             check_min_cppstd(self, 20)
         check_min_vs(self, 191)
         if not is_msvc(self):
-            minimum_version = self._compilers_minimum_version.get(str(self.settings.compiler), False)
-            if minimum_version and Version(self.settings.compiler.version) < minimum_version:
+            minimum_version = self._compilers_minimum_version.get(
+                str(self.settings.compiler), False
+            )
+            if (
+                minimum_version
+                and Version(self.settings.compiler.version) < minimum_version
+            ):
                 raise ConanInvalidConfiguration(
-                    f"{self.ref} requires C++{self._min_cppstd}, which your compiler does not support.")
+                    f"{self.ref} requires C++{self._min_cppstd}, which your compiler does not support."
+                )
 
     def build_requirements(self):
+        self.tool_requires("protobuf/3.21.12")
         self.test_requires("standardprojectsettings/[>=0.2.0]")
         if not self.conf.get("tools.build:skip_test", False, check_type=bool):
             self.test_requires("gtest/1.14.0")
@@ -122,7 +160,11 @@ class CuraEngineConan(ConanFile):
 
         for req in self.conan_data["requirements"]:
             # Skip OneTBB for Emscripten builds (single-threaded)
-            if req.startswith("onetbb/") and self.settings.arch == "wasm" and self.settings.os == "Emscripten":
+            if (
+                req.startswith("onetbb/")
+                and self.settings.arch == "wasm"
+                and self.settings.os == "Emscripten"
+            ):
                 continue
             self.requires(req)
         if self.options.enable_arcus:
@@ -156,17 +198,31 @@ class CuraEngineConan(ConanFile):
         tc.variables["CURA_ENGINE_VERSION"] = self.version
         tc.variables["CURA_ENGINE_HASH"] = self.conan_data["commit"]
         tc.variables["ENABLE_ARCUS"] = self.options.enable_arcus
-        tc.variables["ENABLE_TESTING"] = not self.conf.get("tools.build:skip_test", False, check_type=bool)
+        tc.variables["ENABLE_TESTING"] = not self.conf.get(
+            "tools.build:skip_test", False, check_type=bool
+        )
         tc.variables["ENABLE_BENCHMARKS"] = self.options.enable_benchmarks
         tc.variables["EXTENSIVE_WARNINGS"] = self.options.enable_extensive_warnings
-        tc.variables["OLDER_APPLE_CLANG"] = self.settings.compiler == "apple-clang" and Version(
-            self.settings.compiler.version) < "14"
-        tc.variables["ENABLE_THREADING"] = not (self.settings.arch == "wasm" and self.settings.os == "Emscripten")
+        tc.variables["OLDER_APPLE_CLANG"] = (
+            self.settings.compiler == "apple-clang"
+            and Version(self.settings.compiler.version) < "14"
+        )
+        tc.variables["ENABLE_THREADING"] = not (
+            self.settings.arch == "wasm" and self.settings.os == "Emscripten"
+        )
         if self.options.enable_plugins:
             tc.variables["ENABLE_PLUGINS"] = True
             tc.variables["ENABLE_REMOTE_PLUGINS"] = self.options.enable_remote_plugins
         else:
             tc.variables["ENABLE_PLUGINS"] = self.options.enable_plugins
+
+        if "protobuf" in self.dependencies.build:
+            protoc_path = os.path.join(
+                self.dependencies.build["protobuf"].package_folder, "bin", "protoc"
+            )
+            tc.variables["Protobuf_PROTOC_EXECUTABLE"] = protoc_path.replace("\\", "/")
+            tc.variables["CONAN_PROTOC_PATH"] = protoc_path.replace("\\", "/")
+
         self.setup_cmake_toolchain_sentry(tc)
         tc.generate()
 
@@ -189,10 +245,25 @@ class CuraEngineConan(ConanFile):
                 if not os.path.exists(dist_path):
                     mkdir(self, dist_path)
                 if len(dep.cpp_info.libdirs) > 0:
-                    copy(self, "*.dylib", dep.cpp_info.libdirs[0], os.path.join(self.build_folder, dist_folder))
-                    copy(self, "*.dll", dep.cpp_info.libdirs[0], os.path.join(self.build_folder, dist_folder))
+                    copy(
+                        self,
+                        "*.dylib",
+                        dep.cpp_info.libdirs[0],
+                        os.path.join(self.build_folder, dist_folder),
+                    )
+                    copy(
+                        self,
+                        "*.dll",
+                        dep.cpp_info.libdirs[0],
+                        os.path.join(self.build_folder, dist_folder),
+                    )
                 if len(dep.cpp_info.bindirs) > 0:
-                    copy(self, "*.dll", dep.cpp_info.bindirs[0], os.path.join(self.build_folder, dist_folder))
+                    copy(
+                        self,
+                        "*.dll",
+                        dep.cpp_info.bindirs[0],
+                        os.path.join(self.build_folder, dist_folder),
+                    )
 
     def layout(self):
         cmake_layout(self)
@@ -212,7 +283,12 @@ class CuraEngineConan(ConanFile):
         self.send_sentry_debug_files(binary_basename="CuraEngine")
 
     def deploy(self):
-        copy(self, "CuraEngine*", src=os.path.join(self.package_folder, "bin"), dst=self.deploy_folder)
+        copy(
+            self,
+            "CuraEngine*",
+            src=os.path.join(self.package_folder, "bin"),
+            dst=self.deploy_folder,
+        )
 
     def package(self):
         match self.settings.os:
@@ -222,15 +298,37 @@ class CuraEngineConan(ConanFile):
                 ext = ".js"
             case other:
                 ext = ""
-        copy(self, f"CuraEngine{ext}", src=self.build_folder, dst=os.path.join(self.package_folder, "bin"))
-        copy(self, f"*.d.ts", src=self.build_folder, dst=os.path.join(self.package_folder, "bin"))
-        copy(self, f"_CuraEngine.*", src=self.build_folder, dst=os.path.join(self.package_folder, "lib"))
-        copy(self, "LICENSE*", src=self.source_folder, dst=os.path.join(self.package_folder, "license"))
+        copy(
+            self,
+            f"CuraEngine{ext}",
+            src=self.build_folder,
+            dst=os.path.join(self.package_folder, "bin"),
+        )
+        copy(
+            self,
+            f"*.d.ts",
+            src=self.build_folder,
+            dst=os.path.join(self.package_folder, "bin"),
+        )
+        copy(
+            self,
+            f"_CuraEngine.*",
+            src=self.build_folder,
+            dst=os.path.join(self.package_folder, "lib"),
+        )
+        copy(
+            self,
+            "LICENSE*",
+            src=self.source_folder,
+            dst=os.path.join(self.package_folder, "license"),
+        )
 
     def package_info(self):
         ext = ".exe" if self.settings.os == "Windows" else ""
-        self.conf_info.define_path("user.curaengine:curaengine",
-                                   os.path.join(self.package_folder, "bin", f"CuraEngine{ext}"))
+        self.conf_info.define_path(
+            "user.curaengine:curaengine",
+            os.path.join(self.package_folder, "bin", f"CuraEngine{ext}"),
+        )
 
         if self.settings.os == "Emscripten":
             self.python_requires["npmpackage"].module.conf_package_json(self)
