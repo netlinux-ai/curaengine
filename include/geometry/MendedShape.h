@@ -10,35 +10,38 @@
 
 namespace cura
 {
-    /*!
-     * \brief A MendedShape is a wrapper class for a Shape,
-     *   so we can't forget to 'prepare' the shape for those algorithm(s) that need that.
-     * 
-     * Some algorithms (well, just one at the moment, SkeletalTrapezoidation) needs polygons that
-     * - don't (near) self-intersect,
-     * - don't have any colinear segments,
-     * - don't have any degenerate vertices,
-     * - ... etc.
-     * When this is forgotten, it can _sometimes_ produce crashes, especially in more complicated models;
-     * since this doesn't always happen (or even in the majority of cases), it can slip by our QA process.
-     * This class will make it so we can't forget that anymore, since the typesystem will remind people.
-     * 
-     * It doesn't make much sense to do this inside of SkeletalTrapezoidation, bc. separation of concerns.
-     * (Also we can extract wether a very small shape has now become empty before entering the algorithm.)
-     * (Also we might conceivably need it later for other things.)
-     * 
-     * (Previously basically all of its code was in WallToolPaths instead.)
-     */
-    class MendedShape
+/*!
+ * \brief A MendedShape is a wrapper class for a Shape,
+ *   so we can't forget to 'prepare' the shape for those algorithm(s) that need that.
+ *
+ * Some algorithms (well, just one at the moment, SkeletalTrapezoidation) needs polygons that
+ * - don't (near) self-intersect,
+ * - don't have any colinear segments,
+ * - don't have any degenerate vertices,
+ * - ... etc.
+ * When this is forgotten, it can _sometimes_ produce crashes, especially in more complicated models;
+ * since this doesn't always happen (or even in the majority of cases), it can slip by our QA process.
+ * This class will make it so we can't forget that anymore, since the typesystem will remind people.
+ *
+ * It doesn't make much sense to do this inside of SkeletalTrapezoidation, bc. separation of concerns.
+ * (Also we can extract wether a very small shape has now become empty before entering the algorithm.)
+ * (Also we might conceivably need it later for other things.)
+ *
+ * (Previously basically all of its code was in WallToolPaths instead.)
+ */
+class MendedShape
+{
+public:
+    MendedShape()
+        : shape_(Shape())
     {
-    public:
-        MendedShape() : shape_(Shape()) {}
-        MendedShape(const Settings& settings, const SectionType section_type, const Shape& shape);
-        const Shape& getShape() const;
+    }
+    MendedShape(const Settings& settings, const SectionType section_type, const Shape& shape);
+    const Shape& getShape() const;
 
-    protected:
-        Shape shape_;
-    };
+protected:
+    Shape shape_;
+};
 } // namespace cura
 
 #endif // GEOMETRY_MENDEDSHAPE_H

@@ -3,9 +3,9 @@
 
 #include "geometry/MendedShape.h"
 
+#include "utils/Simplify.h"
 #include "utils/actions/smooth.h"
 #include "utils/polygonUtils.h"
-#include "utils/Simplify.h"
 
 using namespace cura;
 
@@ -16,10 +16,8 @@ MendedShape::MendedShape(const Settings& settings, const SectionType section_typ
     // keeping enough information to not degrade the print quality;
     // These features can't be printed anyhow. See PR CuraEngine#1811 for some screenshots
     const coord_t allowed_distance = settings.get<coord_t>("meshfix_maximum_deviation");
-    const coord_t open_close_distance =
-        settings.get<bool>("fill_outline_gaps") ?
-        settings.get<coord_t>("min_feature_size") / 2 - 5 :
-        settings.get<coord_t>("min_wall_line_width") / 2 - 5;
+    const coord_t open_close_distance
+        = settings.get<bool>("fill_outline_gaps") ? settings.get<coord_t>("min_feature_size") / 2 - 5 : settings.get<coord_t>("min_wall_line_width") / 2 - 5;
     const coord_t epsilon_offset = (allowed_distance / 2) - 1;
     const double small_area_length = settings.get<double>("wall_line_width_0") / 2.0;
 
