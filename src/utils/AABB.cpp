@@ -217,13 +217,14 @@ coord_t AABB::height() const
 
 std::tuple<AABB, AngleRadians> AABB::minimumAreaOrientedBoundingBox(const Shape& shape)
 {
-    if (shape[0].size() < 2) {
-        return { {{0, 0}, {0, 0}}, 0.0 };
+    if (shape[0].size() < 2)
+    {
+        return { { { 0, 0 }, { 0, 0 } }, 0.0 };
     }
 
     coord_t minArea = std::numeric_limits<coord_t>::max();
     AngleRadians bestAngle = 0.0;
-    AABB bestAABB = { {0, 0}, {0, 0} };
+    AABB bestAABB = { { 0, 0 }, { 0, 0 } };
 
     // Iterate through every edge of the polygon
     for (auto iterator = shape[0].beginSegments(); iterator != shape[0].endSegments(); ++iterator)
@@ -231,7 +232,7 @@ std::tuple<AABB, AngleRadians> AABB::minimumAreaOrientedBoundingBox(const Shape&
         const Point2LL& p1 = (*iterator).start;
         const Point2LL& p2 = (*iterator).end;
 
-        const auto xHat  = p2 - p1;
+        const auto xHat = p2 - p1;
         const auto length = vSize(xHat);
 
         if (length < 100)

@@ -126,7 +126,6 @@ public:
      * @return A tuple containing the local AABB (extents) and the rotation angle.
      */
     static std::tuple<AABB, AngleRadians> minimumAreaOrientedBoundingBox(const Shape& shape);
-
 };
 
 } // namespace cura
