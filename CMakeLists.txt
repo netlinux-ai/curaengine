@@ -197,6 +197,7 @@ set(engine_SRCS # Except main.cpp.
         src/geometry/Polyline.cpp
         src/geometry/ClosedPolyline.cpp
         src/geometry/MixedLinesSet.cpp
+        src/geometry/MendedShape.cpp
 
         src/geometry/conversions/Point2D_Point2LL.cpp
 )
