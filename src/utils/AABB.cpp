@@ -222,9 +222,9 @@ std::tuple<AABB, AngleRadians> AABB::minimumAreaOrientedBoundingBox(const Shape&
         return { { { 0, 0 }, { 0, 0 } }, 0.0 };
     }
 
-    coord_t minArea = std::numeric_limits<coord_t>::max();
-    AngleRadians bestAngle = 0.0;
-    AABB bestAABB = { { 0, 0 }, { 0, 0 } };
+    coord_t min_area = std::numeric_limits<coord_t>::max();
+    AngleRadians best_angle = 0.0;
+    AABB best_aabb = { { 0, 0 }, { 0, 0 } };
 
     // Iterate through every edge of the polygon
     for (auto iterator = shape[0].beginSegments(); iterator != shape[0].endSegments(); ++iterator)
@@ -232,51 +232,38 @@ std::tuple<AABB, AngleRadians> AABB::minimumAreaOrientedBoundingBox(const Shape&
         const Point2LL& p1 = (*iterator).start;
         const Point2LL& p2 = (*iterator).end;
 
-        const auto xHat = p2 - p1;
-        const auto length = vSize(xHat);
+        const auto x_hat = p2 - p1;
+        const auto length = vSize(x_hat);
 
-        if (length < 100)
+        if (length < 5)
         {
             continue;
         }
 
-        const auto yHat = turn90CCW(xHat);
+        const auto y_hat = turn90CCW(x_hat);
 
-        coord_t minU = std::numeric_limits<coord_t>::max();
-        coord_t maxU = -std::numeric_limits<coord_t>::max();
-        coord_t minV = std::numeric_limits<coord_t>::max();
-        coord_t maxV = -std::numeric_limits<coord_t>::max();
+        AABB aabb;
 
         // Project all points onto the local axes defined by this edge
         for (const auto& p : shape[0])
         {
-            // Dot product for projection
-            coord_t x = dot(p, xHat) / length;
-            coord_t y = dot(p, yHat) / length;
-
-            minU = std::min(minU, x);
-            maxU = std::max(maxU, x);
-            minV = std::min(minV, y);
-            maxV = std::max(maxV, y);
+            Point2LL local_p = {
+                dot(p, x_hat) / length,
+                dot(p, y_hat) / length,
+            };
+            aabb.include(local_p);
         }
 
-        const auto width = maxU - minU;
-        const auto height = maxV - minV;
-        const auto area = width * height;
-        if (area < minArea)
+        coord_t area = aabb.area();
+        if (area < min_area)
         {
-            minArea = area;
-            bestAngle = angle_rad(xHat);
-
-            // Store the AABB in the local coordinate space
-            bestAABB.min_.X = minU;
-            bestAABB.min_.Y = minV;
-            bestAABB.max_.X = maxU;
-            bestAABB.max_.Y = maxV;
+            min_area = area;
+            best_angle = angle_rad(x_hat);
+            best_aabb = aabb;
         }
     }
 
-    return std::make_tuple(bestAABB, bestAngle);
+    return { best_aabb, best_angle };
 }
 
 } // namespace cura

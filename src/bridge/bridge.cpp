@@ -432,6 +432,10 @@ std::optional<AngleDegrees> bridgeAngle(
         // 1. calculate the minimum oriented bounding box
         // 2. bridge lines in the smallest axis of this min oriented
         //    bounding box is considered the best orientation
+        // This heuristic is used since this produces more consistent bridging angles.
+        // While the else-case would produce a better theoretical bridging angle it would
+        // produce a different angle for similar areas within the same print. Since this
+        // would look _chaotic_ on the final print a more consistent approach is used.
         auto skin_outline_ = skin_outline;
         skin_outline_.makeConvex();
         auto [aabb, angle] = AABB::minimumAreaOrientedBoundingBox(skin_outline_);
