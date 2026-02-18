@@ -2213,7 +2213,7 @@ void LayerPlan::addLinesByOptimizer(
     const std::unordered_multimap<const Polyline*, const Polyline*>& order_requirements,
     const coord_t extra_inwards_start_move_length,
     const coord_t extra_inwards_end_move_length,
-    const Shape& extra_inwards_move_contour)
+    const MendedShape& extra_inwards_move_contour)
 {
     Shape boundary;
     if (enable_travel_optimization && ! comb_boundary_minimum_.empty())
@@ -2341,7 +2341,7 @@ void LayerPlan::addLinesInGivenOrder(
     const double fan_speed,
     const coord_t extra_inwards_start_move_length,
     const coord_t extra_inwards_end_move_length,
-    const Shape& extra_inwards_move_contour)
+    const MendedShape& extra_inwards_move_contour)
 {
     const coord_t half_line_width = config.getLineWidth() / 2;
     const coord_t line_width_2 = half_line_width * half_line_width;
@@ -4166,7 +4166,7 @@ template void LayerPlan::addLinesByOptimizer(
     const std::unordered_multimap<const Polyline*, const Polyline*>& order_requirements,
     const coord_t extra_inwards_start_move_length,
     const coord_t extra_inwards_end_move_length,
-    const Shape& extra_inwards_move_contour);
+    const MendedShape& extra_inwards_move_contour);
 
 template void LayerPlan::addLinesByOptimizer(
     const ClosedLinesSet& lines,
@@ -4181,6 +4181,6 @@ template void LayerPlan::addLinesByOptimizer(
     const std::unordered_multimap<const Polyline*, const Polyline*>& order_requirements,
     const coord_t extra_inwards_start_move_length,
     const coord_t extra_inwards_end_move_length,
-    const Shape& extra_inwards_move_contour);
+    const MendedShape& extra_inwards_move_contour);
 
 } // namespace cura
