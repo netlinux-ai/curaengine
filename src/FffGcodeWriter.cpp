@@ -4324,6 +4324,27 @@ void FffGcodeWriter::addPrimeTower(const SliceDataStorage& storage, LayerPlan& g
 void FffGcodeWriter::finalize()
 {
     const Settings& mesh_group_settings = Application::getInstance().current_slice_->scene.current_mesh_group->settings;
+
+    // Write the current extruder's end G-code
+    const Scene& scene = Application::getInstance().current_slice_->scene;
+    const Settings& extruder_settings = scene.extruders[gcode.getExtruderNr()].settings_;
+    const auto extruder_end_code = extruder_settings.get<std::string>("machine_extruder_end_code");
+
+    if (! extruder_end_code.empty())
+    {
+        if (mesh_group_settings.get<bool>("relative_extrusion"))
+        {
+            gcode.writeExtrusionMode(false); // ensure absolute extrusion mode is set before the end gcode
+        }
+
+        gcode.writeCode(extruder_end_code.c_str());
+
+        if (mesh_group_settings.get<bool>("relative_extrusion"))
+        {
+            gcode.writeExtrusionMode(true); // restore relative extrusion mode
+        }
+    }
+
     if (mesh_group_settings.get<bool>("machine_heated_bed"))
     {
         gcode.writeBedTemperatureCommand(0); // Cool down the bed (M140).
@@ -4338,7 +4359,6 @@ void FffGcodeWriter::finalize()
     std::vector<double> filament_used;
     std::vector<std::string> material_ids;
     std::vector<bool> extruder_is_used;
-    const Scene& scene = Application::getInstance().current_slice_->scene;
     for (size_t extruder_nr = 0; extruder_nr < scene.extruders.size(); extruder_nr++)
     {
         filament_used.emplace_back(gcode.getTotalFilamentUsed(extruder_nr));
