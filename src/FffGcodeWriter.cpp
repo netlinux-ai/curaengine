@@ -4329,7 +4329,7 @@ void FffGcodeWriter::finalize()
     if (mesh_group_settings.get<std::string>("print_sequence") == "one_at_a_time")
     {
         gcode.setZ(max_object_height + MM2INT(5));
-        Application::getInstance().communication_->sendCurrentPosition(gcode.getPositionXY());
+        Application::getInstance().communication_->sendCurrentPosition(gcode.getPosition());
         gcode.writeTravel(gcode.getPositionXY(), Application::getInstance().current_slice_->scene.extruders[gcode.getExtruderNr()].settings_.get<Velocity>("speed_travel"));
     }
 
