@@ -1382,7 +1382,7 @@ void GCodeExport::writeZhop(Velocity speed /*= 0*/, const coord_t height, const 
     *output_stream_ << new_line_;
 
     sendTravel(Point3LL(current_position_.x_, current_position_.y_, target_z), speed, extruder_attr, retraction_amounts);
-    
+
     // Update current position Z to reflect the hop so subsequent travels have correct position info
     current_position_.z_ = target_z;
 
