@@ -23,10 +23,6 @@ namespace cura
  * since this doesn't always happen (or even in the majority of cases), it can slip by our QA process.
  * This class will make it so we can't forget that anymore, since the typesystem will remind people.
  *
- * It doesn't make much sense to do this inside of SkeletalTrapezoidation, bc. separation of concerns.
- * (Also we can extract wether a very small shape has now become empty before entering the algorithm.)
- * (Also we might conceivably need it later for other things.)
- *
  * (Previously basically all of its code was in WallToolPaths instead.)
  */
 class MendedShape
