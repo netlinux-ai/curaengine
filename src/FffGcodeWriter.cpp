@@ -2077,7 +2077,7 @@ bool FffGcodeWriter::processMultiLayerInfill(
                     order_requirements,
                     start_move_inwards_length,
                     end_move_inwards_length,
-                    infill_inner_contour);
+                    MendedShape(mesh.settings, SectionType::INFILL, infill_inner_contour));
             }
         }
     }
@@ -2502,7 +2502,7 @@ bool FffGcodeWriter::processSingleLayerInfill(
             order_requirements,
             start_move_inwards_length,
             end_move_inwards_length,
-            infill_inner_contour);
+            MendedShape(mesh.settings, SectionType::INFILL, infill_inner_contour));
 
         if (! skin_support_polygons.empty())
         {
