@@ -4324,13 +4324,13 @@ void FffGcodeWriter::addPrimeTower(const SliceDataStorage& storage, LayerPlan& g
 void FffGcodeWriter::finalize()
 {
     const Settings& mesh_group_settings = Application::getInstance().current_slice_->scene.current_mesh_group->settings;
-    
+
     // In one-at-a-time mode, raise the nozzle to avoid collision with already printed objects during final travel
     if (mesh_group_settings.get<std::string>("print_sequence") == "one_at_a_time")
     {
         gcode.setZ(max_object_height + MM2INT(5));
     }
-    
+
     if (mesh_group_settings.get<bool>("machine_heated_bed"))
     {
         gcode.writeBedTemperatureCommand(0); // Cool down the bed (M140).
