@@ -2817,7 +2817,7 @@ bool FffGcodeWriter::processInsets(
             // subtract the outlines of the parts below this part to give the shapes of the unsupported regions and then
             // shrink those shapes so that any that are narrower than two times max_air_gap will be removed
 
-            Shape compressed_air(part.outline.difference(outlines_below).offset(-max_air_gap));
+            Shape compressed_air = part.outline.difference(outlines_below).offset(-max_air_gap);
 
             // now expand the air regions by the same amount as they were shrunk (completing the morphological opening operation)
             // also, if the bridge-flow is light enough, compensate for the fact that the wall-vertices aren't exactly on the outline
@@ -2828,12 +2828,20 @@ bool FffGcodeWriter::processInsets(
             Shape bridge_mask = compressed_air.offset(max_air_gap + compensate_outline_distance);
             gcode_layer.setBridgeWallMask(bridge_mask);
 
+            const coord_t skin_overlap = mesh.settings.get<coord_t>("skin_overlap_mm");
+
             // Override flooring/skin areas to register bridging areas to be treated as normal skin
             for (SkinPart& skin_part : part.skin_parts)
             {
                 Shape moved_area = skin_part.flooring_fill.intersection(bridge_mask).offset(10);
-                skin_part.flooring_fill = skin_part.flooring_fill.difference(moved_area);
                 skin_part.skin_fill = skin_part.skin_fill.unionPolygons(moved_area);
+
+                // make sure that
+                // - skin_fill (bridging) and flooring/roofing areas are distinct areas
+                // - skin overlap is reapplied on roofing and flooring areas
+                // - skin doesn't grow beyond its original area
+                skin_part.flooring_fill = skin_part.flooring_fill.difference(skin_part.skin_fill).offset(skin_overlap).intersection(skin_part.flooring_fill);
+                skin_part.roofing_fill = skin_part.roofing_fill.difference(skin_part.skin_fill).offset(skin_overlap).intersection(skin_part.roofing_fill);
             }
         }
         else
