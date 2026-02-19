@@ -2833,7 +2833,7 @@ bool FffGcodeWriter::processInsets(
             // Override flooring/skin areas to register bridging areas to be treated as normal skin
             for (SkinPart& skin_part : part.skin_parts)
             {
-                Shape moved_area = skin_part.flooring_fill.intersection(bridge_mask);
+                Shape moved_area = skin_part.flooring_fill.intersection(bridge_mask).offset(10);
                 skin_part.skin_fill = skin_part.skin_fill.unionPolygons(moved_area);
 
                 // make sure that
