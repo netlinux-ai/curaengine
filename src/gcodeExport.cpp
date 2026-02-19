@@ -1374,17 +1374,16 @@ void GCodeExport::writeZhop(Velocity speed /*= 0*/, const coord_t height, const 
     is_z_hopped_ = height;
     const coord_t target_z = current_layer_z_ + is_z_hopped_;
     current_speed_ = speed;
-    *output_stream_ << "G1 F" << PrecisionedDouble{ 1, speed * 60 } << " Z" << MMtoStream{ target_z };
+
     if (retraction_amounts.has_retraction())
     {
         writeRawRetract(retraction_amounts);
     }
-    *output_stream_ << new_line_;
 
-    sendTravel(Point3LL(current_position_.x_, current_position_.y_, target_z), speed, extruder_attr, retraction_amounts);
+    const PrintFeatureType travel_move_type = sendTravel(Point3LL(current_position_.x_, current_position_.y_, target_z), speed, extruder_attr, retraction_amounts);
 
-    // Update current position Z to reflect the hop so subsequent travels have correct position info
-    current_position_.z_ = target_z;
+    *output_stream_ << "G1";
+    writeFXYZE(speed, current_position_.x_, current_position_.y_, target_z, current_e_value_, travel_move_type, retraction_amounts);
 
     assert(speed > 0.0 && "Z hop speed should be positive.");
     total_bounding_box_.includeZ(target_z);
