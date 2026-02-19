@@ -2833,23 +2833,23 @@ bool FffGcodeWriter::processInsets(
             // Override flooring/skin areas to register bridging areas to be treated as normal skin
             for (SkinPart& skin_part : part.skin_parts)
             {
-                Shape moved_area = skin_part.flooring_fill.intersection(bridge_mask).offset(10);
+                Shape moved_area = skin_part.flooring_fill.intersection(bridge_mask);
                 skin_part.skin_fill = skin_part.skin_fill.unionPolygons(moved_area);
 
                 // make sure that
                 // - skin_fill (bridging) and flooring/roofing areas are distinct areas
                 // - skin overlap is reapplied on roofing and flooring areas
                 // - skin doesn't grow beyond its original area
-                if (skin_overlap > 0)
-                {
-                    skin_part.flooring_fill = skin_part.flooring_fill.difference(skin_part.skin_fill).offset(skin_overlap).intersection(skin_part.flooring_fill);
-                    skin_part.roofing_fill = skin_part.roofing_fill.difference(skin_part.skin_fill).offset(skin_overlap).intersection(skin_part.roofing_fill);
-                }
-                else
-                {
-                    skin_part.flooring_fill = skin_part.flooring_fill.difference(skin_part.skin_fill);
-                    skin_part.roofing_fill = skin_part.roofing_fill.difference(skin_part.skin_fill);
-                }
+                skin_part.flooring_fill = skin_part.flooring_fill
+                    .difference(skin_part.skin_fill)
+                    .offset(-10)
+                    .offset(skin_overlap + 10)
+                    .intersection(skin_part.flooring_fill);
+                skin_part.roofing_fill = skin_part.roofing_fill
+                    .difference(skin_part.skin_fill)
+                    .offset(-10)
+                    .offset(skin_overlap + 10)
+                    .intersection(skin_part.roofing_fill);
             }
         }
         else
