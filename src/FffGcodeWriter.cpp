@@ -4325,6 +4325,13 @@ void FffGcodeWriter::finalize()
 {
     const Settings& mesh_group_settings = Application::getInstance().current_slice_->scene.current_mesh_group->settings;
 
+    // In one-at-a-time mode, raise the nozzle to avoid collision with already printed objects during final travel
+    if (mesh_group_settings.get<std::string>("print_sequence") == "one_at_a_time")
+    {
+        gcode.setZ(max_object_height + MM2INT(5));
+        Application::getInstance().communication_->sendCurrentPosition(gcode.getPosition());
+        gcode.writeTravel(gcode.getPositionXY(), Application::getInstance().current_slice_->scene.extruders[gcode.getExtruderNr()].settings_.get<Velocity>("speed_travel"));
+    }
     // Write the current extruder's end G-code
     const Scene& scene = Application::getInstance().current_slice_->scene;
     const Settings& extruder_settings = scene.extruders[gcode.getExtruderNr()].settings_;
