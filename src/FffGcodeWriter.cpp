@@ -2840,16 +2840,8 @@ bool FffGcodeWriter::processInsets(
                 // - skin_fill (bridging) and flooring/roofing areas are distinct areas
                 // - skin overlap is reapplied on roofing and flooring areas
                 // - skin doesn't grow beyond its original area
-                skin_part.flooring_fill = skin_part.flooring_fill
-                    .difference(skin_part.skin_fill)
-                    .offset(-10)
-                    .offset(skin_overlap + 10)
-                    .intersection(skin_part.flooring_fill);
-                skin_part.roofing_fill = skin_part.roofing_fill
-                    .difference(skin_part.skin_fill)
-                    .offset(-10)
-                    .offset(skin_overlap + 10)
-                    .intersection(skin_part.roofing_fill);
+                skin_part.flooring_fill = skin_part.flooring_fill.difference(skin_part.skin_fill).offset(-10).offset(skin_overlap + 10).intersection(skin_part.flooring_fill);
+                skin_part.roofing_fill = skin_part.roofing_fill.difference(skin_part.skin_fill).offset(-10).offset(skin_overlap + 10).intersection(skin_part.roofing_fill);
             }
         }
         else
