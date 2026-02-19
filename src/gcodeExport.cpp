@@ -1137,7 +1137,7 @@ void GCodeExport::writeFXYZE(
 
     Point2LL gcode_pos = getGcodePos(x, y, current_extruder_);
     total_bounding_box_.include(Point3LL(gcode_pos.X, gcode_pos.Y, z));
-    
+
     if (x != current_position_.x_ || y != current_position_.y_)
     {
         *output_stream_ << " X" << MMtoStream{ gcode_pos.X } << " Y" << MMtoStream{ gcode_pos.Y };
