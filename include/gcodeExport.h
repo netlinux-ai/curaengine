@@ -616,7 +616,7 @@ public:
      * - Switch to absolute extrusion mode
      * - Write the provided code
      * - Restore relative extrusion mode
-     * 
+     *
      * \param str The code string to write
      */
     void writeCodeWithAbsoluteExtrusion(const char* str);
