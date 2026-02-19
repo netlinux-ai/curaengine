@@ -1142,7 +1142,7 @@ void GCodeExport::writeFXYZE(
     {
         *output_stream_ << " X" << MMtoStream{ gcode_pos.X };
     }
-    
+
     if (y != current_position_.y_)
     {
         *output_stream_ << " Y" << MMtoStream{ gcode_pos.Y };
