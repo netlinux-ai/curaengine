@@ -554,6 +554,7 @@ TEST_F(GCodeExportTest, insertWipeScriptSingleMove)
     config.retraction_enable = false;
     config.hop_enable = false;
     config.brush_pos_x = 2000;
+    config.brush_pos_y = 2000;
     config.repeat_count = 1;
     config.move_distance = 500;
     config.move_speed = 10.0;
@@ -566,9 +567,9 @@ TEST_F(GCodeExportTest, insertWipeScriptSingleMove)
     std::getline(output, token, '\n');
     EXPECT_EQ(std::string(";WIPE_SCRIPT_BEGIN"), token) << "Wipe script should always start with tag.";
     std::getline(output, token, '\n');
-    EXPECT_EQ(std::string("G0 F600 X2 Y1"), token) << "Wipe script should go to its position.";
+    EXPECT_EQ(std::string("G0 F600 X2 Y2"), token) << "Wipe script should go to its position.";
     std::getline(output, token, '\n');
-    EXPECT_EQ(std::string("G0 X2.5 Y1"), token) << "There should be one wipe move.";
+    EXPECT_EQ(std::string("G0 X2.5"), token) << "There should be one wipe move.";
     std::getline(output, token, '\n');
     EXPECT_EQ(std::string("G0 X1 Y1"), token) << "Wipe script should return back to position before wipe.";
     std::getline(output, token, '\n');
