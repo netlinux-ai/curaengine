@@ -4332,17 +4332,7 @@ void FffGcodeWriter::finalize()
 
     if (! extruder_end_code.empty())
     {
-        if (mesh_group_settings.get<bool>("relative_extrusion"))
-        {
-            gcode.writeExtrusionMode(false); // ensure absolute extrusion mode is set before the end gcode
-        }
-
-        gcode.writeCode(extruder_end_code.c_str());
-
-        if (mesh_group_settings.get<bool>("relative_extrusion"))
-        {
-            gcode.writeExtrusionMode(true); // restore relative extrusion mode
-        }
+        gcode.writeCodeWithAbsoluteExtrusion(extruder_end_code.c_str());
     }
 
     if (mesh_group_settings.get<bool>("machine_heated_bed"))
