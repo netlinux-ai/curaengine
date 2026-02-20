@@ -88,9 +88,6 @@ jobs:
 
       - name: Package with checkinstall
         run: |
-          sudo cp -a staging/usr/bin/CuraEngine /usr/bin/CuraEngine
-          sudo mkdir -p /usr/lib/curaengine
-          sudo cp -a staging/usr/lib/curaengine/*.so* /usr/lib/curaengine/ 2>/dev/null || true
           sudo checkinstall --default \
             --pkgname=curaengine \
             --pkgversion="${{ steps.version.outputs.version }}" \
@@ -99,7 +96,7 @@ jobs:
             --pakdir=. \
             --install=no \
             --fstrans=yes \
-            bash -c 'cp -a staging/usr/bin/CuraEngine /usr/bin/CuraEngine && mkdir -p /usr/lib/curaengine && cp -a staging/usr/lib/curaengine/* /usr/lib/curaengine/'
+            bash -c 'mkdir -p /usr/bin /usr/lib/curaengine && cp -af staging/usr/bin/CuraEngine /usr/bin/CuraEngine && cp -af staging/usr/lib/curaengine/* /usr/lib/curaengine/'
 
       - name: Repack .deb for reprepro compatibility
         run: |
