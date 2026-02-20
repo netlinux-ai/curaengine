@@ -22,7 +22,7 @@ jobs:
           sudo apt-get install -y \
             build-essential cmake ninja-build \
             python3 python3-pip \
-            pkg-config \
+            pkg-config patchelf \
             checkinstall
 
       - name: Install Conan
@@ -31,7 +31,7 @@ jobs:
           conan config install https://github.com/ultimaker/conan-config.git
           conan profile detect --force
 
-      - name: Build CuraEngine with Conan (static)
+      - name: Build CuraEngine with Conan
         run: |
           conan install . --build=missing --update \
             -o '*:enable_arcus=False' \
@@ -49,21 +49,48 @@ jobs:
           echo "version=${BASE_VER}-${REV}netlinux1" >> "$GITHUB_OUTPUT"
           echo "tag=v${BASE_VER}-${REV}netlinux1" >> "$GITHUB_OUTPUT"
 
-      - name: Locate and verify binary
+      - name: Stage binary with bundled libraries
         run: |
           BINARY=$(find build -name CuraEngine -type f -executable | head -1)
           echo "Found: $BINARY"
-          ls -la "$BINARY"
           file "$BINARY"
-          # Verify no missing shared libraries
+
+          # Activate Conan runtime environment to resolve library paths
           source build/Release/generators/conanrun.sh 2>/dev/null || true
-          ldd "$BINARY" || true
-          cp "$BINARY" ./CuraEngine
-          chmod 755 ./CuraEngine
+
+          # Create staging layout
+          mkdir -p staging/usr/bin staging/usr/lib/curaengine
+
+          # Copy binary
+          cp "$BINARY" staging/usr/bin/CuraEngine
+          chmod 755 staging/usr/bin/CuraEngine
+
+          # Find and bundle non-system shared libraries (from Conan)
+          ldd "$BINARY" | while read -r line; do
+            lib=$(echo "$line" | awk '{print $3}')
+            [ -f "$lib" ] || continue
+            case "$lib" in
+              /home/runner/.conan2/*|/tmp/*)
+                echo "Bundling: $lib"
+                cp "$lib" staging/usr/lib/curaengine/
+                ;;
+            esac
+          done
+
+          # Set RPATH so the binary finds bundled libs
+          patchelf --set-rpath '/usr/lib/curaengine' staging/usr/bin/CuraEngine
+
+          # Verify
+          echo "=== Staged files ==="
+          find staging -type f
+          echo "=== ldd check ==="
+          LD_LIBRARY_PATH=staging/usr/lib/curaengine ldd staging/usr/bin/CuraEngine
 
       - name: Package with checkinstall
         run: |
-          sudo mkdir -p /usr/bin
+          sudo cp -a staging/usr/bin/CuraEngine /usr/bin/CuraEngine
+          sudo mkdir -p /usr/lib/curaengine
+          sudo cp -a staging/usr/lib/curaengine/*.so* /usr/lib/curaengine/ 2>/dev/null || true
           sudo checkinstall --default \
             --pkgname=curaengine \
             --pkgversion="${{ steps.version.outputs.version }}" \
@@ -72,7 +99,7 @@ jobs:
             --pakdir=. \
             --install=no \
             --fstrans=yes \
-            cp -a CuraEngine /usr/bin/CuraEngine
+            bash -c 'cp -a staging/usr/bin/CuraEngine /usr/bin/CuraEngine && mkdir -p /usr/lib/curaengine && cp -a staging/usr/lib/curaengine/* /usr/lib/curaengine/'
 
       - name: Repack .deb for reprepro compatibility
         run: |
@@ -100,7 +127,7 @@ jobs:
 
             CLI slicer: converts STL to G-code for 3D printing.
             ```
-            sudo dpkg -i curaengine_*.deb
+            sudo apt install curaengine
             CuraEngine slice -j <printer.json> -l model.stl -o output.gcode
             ```
           files: curaengine_*.deb
