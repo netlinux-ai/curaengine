@@ -224,7 +224,7 @@ Shape LayerPlan::computeCombBoundary(const CombBoundary boundary_type)
                     }
                     else
                     {
-                        part_combing_boundary = part.outline.offset(offset);
+                        part_combing_boundary = part.outline.offset(10).offset(offset - 10);
                         if (combing_mode == CombingMode::NO_SKIN) // Add the increased outline offset, subtract skin (infill and part of the inner walls)
                         {
                             part_combing_boundary = part_combing_boundary.difference(part.inner_area.difference(part.infill_area));
