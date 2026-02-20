@@ -31,12 +31,13 @@ jobs:
           conan config install https://github.com/ultimaker/conan-config.git
           conan profile detect --force
 
-      - name: Build CuraEngine with Conan
+      - name: Build CuraEngine with Conan (static)
         run: |
           conan install . --build=missing --update \
             -o '*:enable_arcus=False' \
             -o '*:enable_plugins=False' \
-            -o '*:with_cura_resources=False'
+            -o '*:with_cura_resources=False' \
+            -o '*:shared=False'
           cmake --preset conan-release
           cmake --build --preset conan-release --parallel $(nproc)
 
@@ -48,13 +49,15 @@ jobs:
           echo "version=${BASE_VER}-${REV}netlinux1" >> "$GITHUB_OUTPUT"
           echo "tag=v${BASE_VER}-${REV}netlinux1" >> "$GITHUB_OUTPUT"
 
-      - name: Locate built binary
+      - name: Locate and verify binary
         run: |
-          # CuraEngine binary is in the build directory (no cmake install targets)
           BINARY=$(find build -name CuraEngine -type f -executable | head -1)
           echo "Found: $BINARY"
           ls -la "$BINARY"
           file "$BINARY"
+          # Verify no missing shared libraries
+          source build/Release/generators/conanrun.sh 2>/dev/null || true
+          ldd "$BINARY" || true
           cp "$BINARY" ./CuraEngine
           chmod 755 ./CuraEngine
 
