@@ -48,12 +48,15 @@ jobs:
           echo "version=${BASE_VER}-${REV}netlinux1" >> "$GITHUB_OUTPUT"
           echo "tag=v${BASE_VER}-${REV}netlinux1" >> "$GITHUB_OUTPUT"
 
-      - name: Install to staging directory
+      - name: Locate built binary
         run: |
-          source build/Release/generators/conanrun.sh
-          DESTDIR=$(pwd)/install cmake --install build/Release --prefix /usr
-          # Verify the binary exists
-          ls -la install/usr/bin/CuraEngine
+          # CuraEngine binary is in the build directory (no cmake install targets)
+          BINARY=$(find build -name CuraEngine -type f -executable | head -1)
+          echo "Found: $BINARY"
+          ls -la "$BINARY"
+          file "$BINARY"
+          cp "$BINARY" ./CuraEngine
+          chmod 755 ./CuraEngine
 
       - name: Package with checkinstall
         run: |
@@ -66,7 +69,7 @@ jobs:
             --pakdir=. \
             --install=no \
             --fstrans=yes \
-            cp -a install/usr/bin/CuraEngine /usr/bin/CuraEngine
+            cp -a CuraEngine /usr/bin/CuraEngine
 
       - name: Repack .deb for reprepro compatibility
         run: |
