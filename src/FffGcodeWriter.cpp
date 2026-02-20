@@ -2177,7 +2177,9 @@ bool FffGcodeWriter::processSingleLayerInfill(
 
     if (! infill_below_skin.empty())
     {
-        const Shape infill_contour = part.infill_area.offset(-(infill_line_width / 2) + infill_overlap);
+        const auto infill_wall_line_count = static_cast<coord_t>(mesh.settings.get<size_t>("infill_wall_line_count"));
+        const coord_t infill_wall_offset = -infill_wall_line_count * infill_line_width;
+        const Shape infill_contour = part.infill_area.offset(-(infill_line_width / 2) + infill_overlap + infill_wall_offset);
         const LayerPlan* completed_layer_below = layer_plan_buffer.getCompletedLayerPlan(gcode_layer.getLayerNr() - 1);
         std::tie(infill_below_skin, skin_support_angle) = makeBridgeOverInfillPrintable(infill_contour, infill_below_skin, mesh, completed_layer_below, gcode_layer.getLayerNr());
         infill_not_below_skin = infill_not_below_skin.difference(infill_below_skin);
@@ -2633,10 +2635,6 @@ void FffGcodeWriter::partitionInfillBySkinAbove(
     // there is infill below skin, is there also infill that isn't below skin?
     infill_not_below_skin = part.infill_area_per_combine_per_density.back().front().difference(infill_below_skin);
     infill_not_below_skin.removeSmallAreas(min_area);
-
-    // need to take skin/infill overlap that was added in SkinInfillAreaComputation::generateInfill() into account
-    const coord_t infill_skin_overlap = mesh.settings.get<coord_t>((part.wall_toolpaths.size() > 1) ? "wall_line_width_x" : "wall_line_width_0") / 2;
-    const Shape infill_below_skin_overlap = infill_below_skin.offset(-(infill_skin_overlap + tiny_infill_offset));
 }
 
 size_t FffGcodeWriter::findUsedExtruderIndex(const SliceDataStorage& storage, const LayerIndex& layer_nr, bool last) const
