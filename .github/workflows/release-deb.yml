@@ -1,0 +1,115 @@
+name: Build .deb package
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install system build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential cmake ninja-build \
+            python3 python3-pip \
+            pkg-config \
+            checkinstall
+
+      - name: Install Conan
+        run: |
+          pip install --break-system-packages "conan>=2.7.0,<3.0.0"
+          conan config install https://github.com/ultimaker/conan-config.git
+          conan profile detect --force
+
+      - name: Build CuraEngine with Conan
+        run: |
+          conan install . --build=missing --update \
+            -o '*:enable_arcus=False' \
+            -o '*:enable_plugins=False' \
+            -o '*:with_cura_resources=False'
+          cmake --preset conan-release
+          cmake --build --preset conan-release --parallel $(nproc)
+
+      - name: Determine version
+        id: version
+        run: |
+          BASE_VER=$(grep '^version:' conandata.yml | head -1 | sed 's/version: *"//;s/"//')
+          REV=${{ github.run_number }}
+          echo "version=${BASE_VER}-${REV}netlinux1" >> "$GITHUB_OUTPUT"
+          echo "tag=v${BASE_VER}-${REV}netlinux1" >> "$GITHUB_OUTPUT"
+
+      - name: Install to staging directory
+        run: |
+          source build/Release/generators/conanrun.sh
+          DESTDIR=$(pwd)/install cmake --install build/Release --prefix /usr
+          # Verify the binary exists
+          ls -la install/usr/bin/CuraEngine
+
+      - name: Package with checkinstall
+        run: |
+          sudo mkdir -p /usr/bin
+          sudo checkinstall --default \
+            --pkgname=curaengine \
+            --pkgversion="${{ steps.version.outputs.version }}" \
+            --maintainer="graham@netlinux.co.uk" \
+            --requires="" \
+            --pakdir=. \
+            --install=no \
+            --fstrans=yes \
+            cp -a install/usr/bin/CuraEngine /usr/bin/CuraEngine
+
+      - name: Repack .deb for reprepro compatibility
+        run: |
+          DEB=$(ls curaengine_*.deb | head -1)
+          sudo chmod 666 "$DEB"
+          mkdir repack && cd repack
+          ar x "../$DEB"
+          for f in *.zst; do
+            [ -f "$f" ] || continue
+            zstd -d "$f"
+            xz "${f%.zst}"
+            rm "$f"
+          done
+          rm "../$DEB"
+          ar rcs "../$DEB" debian-binary control.tar.xz data.tar.xz
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: curaengine ${{ steps.version.outputs.version }}
+          body: |
+            CuraEngine ${{ steps.version.outputs.version }}
+            Automated build from commit ${{ github.sha }}
+
+            CLI slicer: converts STL to G-code for 3D printing.
+            ```
+            sudo dpkg -i curaengine_*.deb
+            CuraEngine slice -j <printer.json> -l model.stl -o output.gcode
+            ```
+          files: curaengine_*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify package repository
+        run: |
+          sleep 5
+          PAYLOAD='{"repo":"netlinux-ai/curaengine","tag":"${{ steps.version.outputs.tag }}"}'
+          SIGNATURE=$(echo -n "$PAYLOAD" \
+            | openssl dgst -sha256 -hmac "${{ secrets.WEBHOOK_SECRET }}" -binary \
+            | xxd -p -c 256)
+          curl -sf -X POST \
+            -H "Content-Type: application/json" \
+            -H "X-Webhook-Signature: sha256=${SIGNATURE}" \
+            -d "$PAYLOAD" \
+            https://packages.netlinux.co.uk/webhook/update-repo
